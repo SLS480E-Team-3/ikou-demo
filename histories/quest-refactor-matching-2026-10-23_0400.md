@@ -42,3 +42,6 @@
 - IslandEditor QuestForm: matching shows a target dropdown of the four groups; saves `{ group }`; picks level koSoADo over an empty / vocab level.
 - The fork session made the areas solid (AREA_ALPHA 1) in this checkout.
 - Checked: tsc clean; /MobDev/QuestMatching?group=naAdjective shows こんな with wrapped labels and こんな → せいかい！; the editor form shows matching / koSoADo / the group dropdown (nothing saved). A full 4-word scripted run couldn't finish because the browser pane was hidden (rAF throttled). Not checked: a saved matching quest on /Game.
+
+## Follow-up: level is a selector
+- QuestForm's level is a `<select>` of `LEVELS`, now issue #7's list (vocab, koSoADo, particles, basicPhrases; final left out), plus (none). A saved level outside the list (old `meaning`) shows as an extra option. Checked in /IslandEditor (nothing saved).

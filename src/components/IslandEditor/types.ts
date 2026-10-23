@@ -22,6 +22,6 @@ export type EditorQuest = {
 // columns). id left out = not created yet
 
 export const QUEST_TYPES: QuestKind[] = ['dodge', 'matching', 'door', 'original', 'shoot', 'particle'] // types: **+ matching**, mechanism: the こそあど quest (issue #8) runs in the demo
-export const LEVELS = ['vocab', 'koSoADo', 'meaning'] // levels: **+ koSoADo**, mechanism: issue #7's level for the matching quests
+export const LEVELS = ['vocab', 'koSoADo', 'particles', 'basicPhrases'] // levels: **vocab, koSoADo, meaning** -> **issue #7's list**, reason: the level field is a selector now, mechanism: final is left out for now
 // the choices offered in the quest form. Only dodge and matching run in this demo; the
 // others are kept so a quest can already be set up for them

@@ -149,8 +149,10 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
             <strong>{quest ? `edit quest #${quest.id}` : 'new quest'}</strong>
             <label style={row}>title <input value={d.title} onChange={e => setD({ ...d, title: e.target.value })} style={{ flex: 1 }} /></label>
             <div style={row}>
-                <label>level <input list="quest-levels" value={d.level ?? ''} onChange={e => setD({ ...d, level: e.target.value })} style={{ width: 90 }} /></label>
-                <datalist id="quest-levels">{LEVELS.map(l => <option key={l} value={l} />)}</datalist>
+                <label>level <select value={d.level ?? ''} onChange={e => setD({ ...d, level: e.target.value || null })}>
+                    <option value="">(none)</option>
+                    {[...LEVELS, ...(d.level && !LEVELS.includes(d.level) ? [d.level] : [])].map(l => <option key={l}>{l}</option>)}
+                </select></label> {/* level: **free text + datalist** -> **select of LEVELS**, reason: pick a level instead of typing it, mechanism: a saved level not in LEVELS (e.g. the old meaning) is kept as an extra option so it isn't lost */}
                 <label>type <select value={d.quest_type ?? 'dodge'} onChange={e => { const t = e.target.value as EditorQuest['quest_type']; setD({ ...d, quest_type: t, ...(t === 'matching' && (!d.level || d.level === 'vocab') ? { level: 'koSoADo' } : {}) }) }}> {/* onChange: **+ level koSoADo on matching**, mechanism: issue #7's level for these quests; only replaces an empty or the default vocab level */}
                     {QUEST_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select></label>
