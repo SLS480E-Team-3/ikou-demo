@@ -48,7 +48,7 @@ export default function CharBlock({ kana, romaji, x, y, size = CHAR_BLOCK_SIZE }
 // use, so a block flying below an entity draws in front of it and above it
 // draws behind. pointerEvents none keeps the stick and NPC taps working
 
-export function TargetBubble({ kana, x, y, h, size = CHAR_BLOCK_SIZE }: { kana: string, x: number, y: number, h: number, size?: number }) {
+export function TargetBubble({ kana, x, y, h, size = CHAR_BLOCK_SIZE, w }: { kana: string, x: number, y: number, h: number, size?: number, w?: number }) { // props: **size only (square)** -> **+ w?**, reason: the matching quest's bubble holds これ / 正解！, mechanism: w widens the body, left out = size x size as before
     return (
         <div
             style={{
@@ -65,7 +65,7 @@ export function TargetBubble({ kana, x, y, h, size = CHAR_BLOCK_SIZE }: { kana: 
         >
             <div
                 style={{
-                    width: size,
+                    width: w ?? size,
                     height: size,
                     boxSizing: 'border-box',
                     border: `${BUBBLE_BORDER_W}px solid ${BUBBLE_BOARDER}`,
