@@ -12,7 +12,7 @@ A Japanese-learning web app for English speakers who are just starting to learn 
 
 - **Framework:** Next.js (App Router) + React 19 + TypeScript
 - **Backend/DB/Auth:** Supabase (`@supabase/supabase-js`, `@supabase/ssr` for cookie-based auth in Next.js)
-- **Hosting:** Vercel
+- **Hosting:** Vercel. Production needs `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Config) and `SUPABASE_SECRET_KEY` (Secret) under Settings → Environments → Production, then a redeploy without build cache; without them every Supabase route and proxied page returns 500.
 - **Styling:** CSS Modules (see `src/app/form.module.css`)
 
 ## Conventions
