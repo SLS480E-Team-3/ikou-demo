@@ -6,6 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
         short_name: 'Ikko',
         description: 'Japanese-learning island game (demo)',
         display: 'standalone',
+        scope: '/', // scope: **none** -> **'/'**, reason: without it the app only covers the folder of the page it was added from (added on /MobDev/GameScene = /MobDev/ only), so going to /, /LogIn or /Game opened an in-app browser with bars at the top and bottom, mechanism: '/' keeps every page of the site inside the full-screen app
         orientation: 'portrait',
         background_color: '#a9cf7a',
         theme_color: '#a9cf7a',
