@@ -8,6 +8,7 @@ import { PLAYER_GAP, useMatchingTraining } from "./matchingTraining"
 import { matchingNpcs } from "../npcs/npcs"
 import { BUBBLE_BG, BUBBLE_BOARDER, BUBBLE_BORDER_W } from "../Entity/dialogBubble"
 import { stopBgm } from "../Entity/voice"
+import type { KosoadoGroup } from "../kosoado"
 // a copy of dodgeQuestIsland.tsx for the matching quest (issue #8): the same
 // square dojo with Ryuuko at its center, the three areas and her word bubble
 // from useMatchingTraining. No Hiroko tutorial yet (no 'matching' quest type
@@ -46,8 +47,8 @@ function Hud({ getHud }: { getHud: () => TrainingHud }) {
 // dodge's HUD without the hp bar: the cyan strip drains over the 3 s pick
 // timer (hud.playing is only true then), and a wrong pick flashes red
 
-function Training({ w, h, onLeave, sensitivity, children }: { w: number, h: number, onLeave: () => void, sensitivity?: number, children?: ReactNode }) {
-    const t = useMatchingTraining({ w, h, onLeave })
+function Training({ w, h, onLeave, group, sensitivity, children }: { w: number, h: number, onLeave: () => void, group?: KosoadoGroup, sensitivity?: number, children?: ReactNode }) { // props: **+ group**, mechanism: passed to useMatchingTraining
+    const t = useMatchingTraining({ w, h, onLeave, group })
     const c = center(w, h)
     return (
         <>
@@ -60,7 +61,7 @@ function Training({ w, h, onLeave, sensitivity, children }: { w: number, h: numb
 // dodgeQuestIsland.tsx's Training on useMatchingTraining: questBg's dojo,
 // the player spawning PLAYER_GAP below Ryuuko, children in the success slot
 
-export function MatchingQuestIsland({ onLeave, sensitivity, children }: { onLeave: () => void, sensitivity?: number, children?: ReactNode }) {
+export function MatchingQuestIsland({ onLeave, group, sensitivity, children }: { onLeave: () => void, group?: KosoadoGroup, sensitivity?: number, children?: ReactNode }) { // props: **+ group**, mechanism: the quest's こそあど group (its target); left out = これ / それ / あれ / どれ
     const boxRef = useRef<HTMLDivElement>(null)
     const [size, setSize] = useState<{ w: number, h: number }>()
     useEffect(() => { stopBgm() }, [])
@@ -70,7 +71,7 @@ export function MatchingQuestIsland({ onLeave, sensitivity, children }: { onLeav
     }, [])
     return (
         <div ref={boxRef} style={{ position: 'relative', width: '100%', height: '100%', background: BUBBLE_BG }}>
-            {size && <Training w={size.w} h={size.h} onLeave={onLeave} sensitivity={sensitivity}>{children}</Training>}
+            {size && <Training w={size.w} h={size.h} onLeave={onLeave} group={group} sensitivity={sensitivity}>{children}</Training>}
         </div>
     )
 }

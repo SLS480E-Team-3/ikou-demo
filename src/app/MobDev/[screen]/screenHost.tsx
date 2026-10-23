@@ -5,8 +5,9 @@ import { ComponentType } from "react"
 import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
 import type { ScreenType } from "../screenTypes"
+import { isKosoadoGroup } from "@/components/Game/kosoado"
 
-type ScreenProps = { island: number, ver?: number, sensitivity?: number, onLeave: () => void } // props: **+ ver**, mechanism: ?ver=N picks the saved island version GameScene shows
+type ScreenProps = { island: number, ver?: number, sensitivity?: number, group?: string, onLeave: () => void } // props: **+ group**, mechanism: ?group= picks QuestMatching's こそあど group // props: **+ ver**, mechanism: ?ver=N picks the saved island version GameScene shows
 
 const Tint = ({ color }: { color: string }) => <style>{`html, body { background-color: ${color}; }`}</style>
 // paints the page behind the scene, like Game/layout.tsx: Safari tints its
@@ -25,8 +26,8 @@ const SCREENS: Record<ScreenType, ComponentType<ScreenProps>> = {
     }), { ssr: false }), // adapter: **quest only** -> **+ Tint BUBBLE_BG**, mechanism: the quest island's cream fills the strips Safari leaves around the page
     QuestMatching: dynamic(() => Promise.all([import("@/components/Game/Scene/matchingQuestIsland"), import("@/components/Game/Entity/dialogBubble")]).then(([m, { BUBBLE_BG }]) => {
         const C = m.MatchingQuestIsland
-        return ({ sensitivity, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C sensitivity={sensitivity} onLeave={onLeave} /></>
-    }), { ssr: false }),
+        return ({ sensitivity, group, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C group={isKosoadoGroup(group) ? group : undefined} sensitivity={sensitivity} onLeave={onLeave} /></>
+    }), { ssr: false }), // group: **none (これ group)** -> **?group=pronoun|adnominal|adverb|naAdjective**, mechanism: a bad or missing value falls back to pronoun
     // QuestMatching: the matching quest prototype (issue #8), same adapter as QuestDodge
     SignUp: dynamic(() => import("@/app/SignUp/page"), { ssr: false }),
     LogIn: dynamic(() => import("@/app/LogIn/page"), { ssr: false }),
@@ -53,6 +54,7 @@ export default function ScreenHost({ screen }: { screen: ScreenType }) {
                 island={Math.trunc(toNum(query.get('island')) ?? 1)}
                 ver={toNum(query.get('ver'))}
                 sensitivity={toNum(query.get('sens'))}
+                group={query.get('group') ?? undefined}
                 onLeave={() => router.push('/MobDev')}
             />
         </div>

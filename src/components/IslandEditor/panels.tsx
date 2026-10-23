@@ -6,6 +6,7 @@ import { NPC_SCRIPTS } from "@/components/Game/npcs/npcs"
 import { sectionStart, type FileSection, type IslandFile } from "@/components/Game/islands/islandFile"
 import type { Selection } from "./canvas"
 import { LEVELS, QUEST_TYPES, type DoorTarget, type EditorQuest } from "./types"
+import { KOSOADO, KOSOADO_GROUPS, groupOf, type KosoadoGroup } from "@/components/Game/kosoado" // imports: **+ kosoado**, mechanism: the matching quest's group dropdown
 
 type Commit = (f: (p: IslandFile) => IslandFile, key?: string) => void
 
@@ -119,7 +120,7 @@ export function SelectionPanel({ file, selection, commit, quests, onDelete, onDu
 // number is undone at once, not digit by digit
 
 const targetText = (t: EditorQuest['target']) => typeof t === 'string' ? t : ''
-const listText = (t: EditorQuest['target'], k: keyof DoorTarget) => t && typeof t === 'object' ? t[k].join(', ') : ''
+const listText = (t: EditorQuest['target'], k: keyof DoorTarget) => t && typeof t === 'object' && k in t ? (t as DoorTarget)[k].join(', ') : '' // test: **any object** -> **an object with that key**, mechanism: a matching target ({ group }) has no answer / decoys
 const toList = (s: string) => s.split(/[,、]/).map(x => x.trim()).filter(Boolean)
 
 function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: EditorQuest, onSaved: (q: EditorQuest) => void }) {
@@ -129,9 +130,12 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
     const [msg, setMsg] = useState('')
     useEffect(() => { setMsg('') }, [quest])
     const door = d.quest_type === 'door'
+    const matching = d.quest_type === 'matching'
+    const [group, setGroup] = useState<KosoadoGroup>(groupOf(quest?.target) ?? 'pronoun')
+    // the matching quest's こそあど group, saved as target { group }
 
     const save = async () => {
-        const body: EditorQuest = { ...d, target: door ? { answer: toList(answer), decoys: toList(decoys) } : (targetText(d.target) || null) }
+        const body: EditorQuest = { ...d, target: door ? { answer: toList(answer), decoys: toList(decoys) } : matching ? { group } : (targetText(d.target) || null) } // target: **+ matching -> { group }**, mechanism: the route stores it as is (kana stays null, it isn't a string)
         setMsg('saving…')
         const res = await fetch('/api/IslandEditor/quests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quest: body }) })
         const json = await res.json()
@@ -147,16 +151,18 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
             <div style={row}>
                 <label>level <input list="quest-levels" value={d.level ?? ''} onChange={e => setD({ ...d, level: e.target.value })} style={{ width: 90 }} /></label>
                 <datalist id="quest-levels">{LEVELS.map(l => <option key={l} value={l} />)}</datalist>
-                <label>type <select value={d.quest_type ?? 'dodge'} onChange={e => setD({ ...d, quest_type: e.target.value as EditorQuest['quest_type'] })}>
+                <label>type <select value={d.quest_type ?? 'dodge'} onChange={e => { const t = e.target.value as EditorQuest['quest_type']; setD({ ...d, quest_type: t, ...(t === 'matching' && (!d.level || d.level === 'vocab') ? { level: 'koSoADo' } : {}) }) }}> {/* onChange: **+ level koSoADo on matching**, mechanism: issue #7's level for these quests; only replaces an empty or the default vocab level */}
                     {QUEST_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select></label>
                 <label>points <input type="number" value={d.reward_points ?? 0} onChange={e => setD({ ...d, reward_points: n(e.target.value) })} style={{ width: 52 }} /></label>
             </div>
-            {door ? <>
+            {matching ? <label style={row}>target <select value={group} onChange={e => setGroup(e.target.value as KosoadoGroup)} style={{ flex: 1, minWidth: 0 }}>
+                {KOSOADO_GROUPS.map(g => <option key={g} value={g}>{KOSOADO[g].name}: {KOSOADO[g].words.map(w => w.word).join('、')}</option>)}
+            </select></label> : door ? <>
                 <label style={row}>answer <input value={answer} placeholder="食べる, 歩く, 走る" onChange={e => setAnswer(e.target.value)} style={{ flex: 1 }} /></label>
                 <label style={row}>decoys <input value={decoys} placeholder="行く, 寝る" onChange={e => setDecoys(e.target.value)} style={{ flex: 1 }} /></label>
             </> : <label style={row}>target <input value={targetText(d.target)} placeholder="あ" onChange={e => setD({ ...d, target: e.target.value })} style={{ width: 80 }} /></label>}
-            {d.quest_type !== 'dodge' && <span style={{ color: '#a60' }}>Only dodge quests run in this demo.</span>}
+            {d.quest_type !== 'dodge' && !matching && <span style={{ color: '#a60' }}>Only dodge and matching quests run in this demo.</span>}
             <div style={row}><button onClick={save} disabled={!d.title}>{quest ? 'Save quest' : 'Create quest + assign'}</button>{msg && <span>{msg}</span>}</div>
         </div>
     )
@@ -164,8 +170,9 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
 // create or edit one quests row (spec F-3, D-12): level, quest type and
 // target, saved straight to Supabase (quest content is not part of the
 // island file, so undo covers which quest an NPC offers, not the row
-// itself). door's target is { answer, decoys } typed as comma lists;
-// every other type takes one kana
+// itself). door's target is { answer, decoys } typed as comma lists,
+// matching's is { group } picked from the four こそあど groups; every other
+// type takes one kana
 
 export function IslandPanel({ file, commit }: { file: IslandFile, commit: Commit }) {
     const setSec = (i: number, patch: Partial<FileSection>, key: string) =>

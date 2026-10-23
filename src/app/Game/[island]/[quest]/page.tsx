@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation"
 import QuestScene, { type QuestSceneProps } from "@/components/Game/Scene/QuestScene"
 import { adminClient, serverClient } from "@/utils/supabase"
+import { groupOf } from "@/components/Game/kosoado" // imports: **+ groupOf**, mechanism: a matching quest's target group
 import { islandQuestType } from "@/utils/islands" // imports: **none** -> **islandQuestType**, mechanism: which quest type this island runs
 
 export default async function QuestPage({ // name: **QuestScene** -> **QuestPage**, mechanism: frees the name for the imported QuestScene component this page now renders
@@ -44,7 +45,8 @@ export default async function QuestPage({ // name: **QuestScene** -> **QuestPage
     // started_at and completed_at are kept. Admin client because
     // user_quests has no write policies; the read goes back through RLS
 
-    const questType = islandQuestType(islandId)
+    const group = groupOf(full.target)
+    const questType = full.quest_type === 'matching' && group ? 'matching' : islandQuestType(islandId) // questType: **always islandQuestType** -> **matching when the row says so**, reason: the こそあど matching quests (issue #8), mechanism: quest_type matching with a { group } target runs MatchingQuestIsland; everything else stays dodge
     // quests.quest_type (set in /IslandEditor) is not read here yet: this
     // demo only has the dodge quest, so every quest runs (and saves its
     // tutorial row) as dodge
@@ -53,6 +55,6 @@ export default async function QuestPage({ // name: **QuestScene** -> **QuestPage
     // has Hiroko already asked this player about this quest type's tutorial?
     // Read through RLS (select policy: own rows only)
 
-    const props: QuestSceneProps = { islandId, quest: row, cleared: !!mine?.completed_at, tutorialSeen: !!tutorial, questType } // props: **no questType** -> **+ questType**, mechanism: QuestScene picks QuestIsland or DodgeQuestIsland from it // props: **no tutorialSeen** -> **+ tutorialSeen**, mechanism: a row in user_tutorials means she already asked, so QuestScene skips the question
+    const props: QuestSceneProps = { islandId, quest: row, cleared: !!mine?.completed_at, tutorialSeen: !!tutorial, questType, group } // props: **no questType** -> **+ questType**, mechanism: QuestScene picks QuestIsland or DodgeQuestIsland from it // props: **no tutorialSeen** -> **+ tutorialSeen**, mechanism: a row in user_tutorials means she already asked, so QuestScene skips the question
     return <QuestScene {...props} /> // render: **inline JSX** -> **<QuestScene>**, mechanism: the page keeps the guards and the start/resume write; QuestScene ('use client') gets the quest and cleared flag as plain props and draws them
 }

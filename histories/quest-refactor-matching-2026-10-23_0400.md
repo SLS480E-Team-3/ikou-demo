@@ -33,3 +33,12 @@
 - `gameScene.tsx`: new `fitWhole` prop. With it, the zoom-out floor is the whole-world fit (min of screen w / world w and screen h / world h) instead of the width fit, and the wheel / pinch may go below ZOOM_MIN down to it (`clampZoom` / `wheelZoom` take a `min`, fed from `zoomMinRef`). Without it nothing changes.
 - `dodgeQuestIsland.tsx` passes `fitWhole`. The matching quest (same dojo) doesn't yet.
 - Checked on /MobDev/QuestDodge: 375 x 812 zooms out to the full dojo (walls, kamidana, entrance) centered; 1400 x 900 too (it used to stop at the width fit, cutting the top and bottom). `npx tsc --noEmit` clean. Not committed.
+
+## Follow-up: four こそあど matching quests + IslandEditor
+- New `src/components/Game/kosoado.ts`: groups pronoun (これ…), adnominal (この…), adverb (こう…), naAdjective (こんな…), each word with romaji and English ("(by you)" / "(over there)" tell そ and あ apart).
+- `matchingTraining.ts`: `group` arg, `questionsFor(group)` replaces MT_QUESTIONS; each ask = answer + 2 random of the other three; labels 12 px and wrap. Pick timer now counts frame time (onTick dt) instead of performance.now(), since a throttled tab ran the 3 s out while the player couldn't move.
+- Routing: quests row `quest_type: 'matching'` + target `{ group }`. Quest page (`groupOf`) → QuestScene → MatchingQuestIsland; MobDev saved islands (`pickOf`) open it too; `/MobDev/QuestMatching?group=<key>`.
+- Types: `QuestKind = QuestType | 'matching'` in tutorial.ts (QuestType itself would need tut-matching-* lines). Editor `QUEST_TYPES` + matching, `LEVELS` + koSoADo, `MatchingTarget`.
+- IslandEditor QuestForm: matching shows a target dropdown of the four groups; saves `{ group }`; picks level koSoADo over an empty / vocab level.
+- The fork session made the areas solid (AREA_ALPHA 1) in this checkout.
+- Checked: tsc clean; /MobDev/QuestMatching?group=naAdjective shows こんな with wrapped labels and こんな → せいかい！; the editor form shows matching / koSoADo / the group dropdown (nothing saved). A full 4-word scripted run couldn't finish because the browser pane was hidden (rAF throttled). Not checked: a saved matching quest on /Game.

@@ -28,7 +28,8 @@ order by t.ord;
 
 -- Island editor (Issue #1): quest columns + storage buckets
 -- level / quest_type / target are set per quest in /IslandEditor.
--- target is a kana string for dodge ("あ") or {"answer": [...], "decoys": [...]} for door.
+-- target is a kana string for dodge ("あ"), {"answer": [...], "decoys": [...]} for door,
+-- or {"group": "pronoun" | "adnominal" | "adverb" | "naAdjective"} for matching (no schema change).
 alter table quests add column if not exists level text;
 alter table quests add column if not exists quest_type text;
 alter table quests add column if not exists target jsonb;

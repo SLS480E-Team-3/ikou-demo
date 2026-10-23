@@ -9,6 +9,7 @@ import ryuuko from "../npcs/dialogs/ryuuko.json"
 import { type PlayerBox } from "./gameScene"
 import { ELENA, RYUUKO, type TrainingHud } from "./training"
 import { center } from "./dodgeTraining"
+import { KOSOADO, type KosoadoGroup } from "../kosoado"
 // the matching quest (issue #8), built like leftRightTraining.ts in ikko,
 // on the dodge quest's square dojo: Ryuuko at the center says a word in her
 // bubble, three colored areas appear under her with English meanings, and
@@ -20,13 +21,14 @@ export type MtPhase = 'intro' | 'play' | 'success' | 'again'
 // 'again': いいえ to Elena after success, Ryuuko offers a replay. No fail
 // phase in the prototype: a wrong pick asks the same word again
 
-export type MatchQuestion = { word: string, romaji: string, answer: string, decoys: [string, string] }
-export const MT_QUESTIONS: MatchQuestion[] = [
-    { word: 'これ', romaji: 'kore', answer: 'this', decoys: ['that', 'which'] },
-]
-// one run's words, in order. Prototype: これ only; それ / あれ / どれ and the
-// other こそあど groups (この, こう, こんな...) come next, with their own
-// English labels
+export type MatchQuestion = { word: string, romaji: string, answer: string, pool: string[] }
+export const questionsFor = (group: KosoadoGroup): MatchQuestion[] => {
+    const words = KOSOADO[group].words
+    return words.map(w => ({ word: w.word, romaji: w.romaji, answer: w.en, pool: words.filter(o => o !== w).map(o => o.en) }))
+}
+// one run's words, in order (こ, そ, あ, ど of the quest's group): the
+// answer is the word's English, the decoys are drawn from the other three
+// questions: **MT_QUESTIONS (これ only)** -> **questionsFor(group)**, reason: the matching quest targets one こそあど group, mechanism: built from kosoado.ts
 
 const AREA_COLORS = [
     { fill: '#c8302a', frame: '#7e1d19' },
@@ -81,7 +83,7 @@ const shuffle = <T,>(a: T[]): T[] => {
     return b
 }
 
-export function useMatchingTraining({ w, h, onLeave }: { w: number, h: number, onLeave?: () => void }) {
+export function useMatchingTraining({ w, h, onLeave, group = 'pronoun' }: { w: number, h: number, onLeave?: () => void, group?: KosoadoGroup }) { // args: **+ group**, mechanism: picks the run's words; left out = これ / それ / あれ / どれ
     const [phase, setPhaseState] = useState<MtPhase>('intro')
     const phaseRef = useRef<MtPhase>('intro')
     const [talkRequest, setTalkRequest] = useState<{ npc: number, key: number } | undefined>(undefined)
@@ -89,7 +91,7 @@ export function useMatchingTraining({ w, h, onLeave }: { w: number, h: number, o
 
     const current = useRef(0)
     const step = useRef<Step>('ask')
-    const stepAt = useRef(0)
+    const stepMs = useRef(0)
     const labels = useRef<string[]>([])
     const bubble = useRef('')
     const hurtAt = useRef(-Infinity)
@@ -98,9 +100,12 @@ export function useMatchingTraining({ w, h, onLeave }: { w: number, h: number, o
     sizeRef.current = { w, h }
     const onLeaveRef = useRef(onLeave)
     onLeaveRef.current = onLeave
+    const questionsRef = useRef(questionsFor(group))
+    if (questionsRef.current[0].word !== KOSOADO[group].words[0].word) questionsRef.current = questionsFor(group)
+    // this quest's words, rebuilt only when the group changes
     // same layout as the other trainings: phase is state (the NPC list depends
     // on it) mirrored in phaseRef, the per-frame state lives in refs.
-    // step / stepAt: where the current word is and when that step began.
+    // step / stepMs: where the current word is and how long (game ms) it has run.
     // labels: the areas' English, shuffled per word (on はい, not during
     // render). bubble: the text in Ryuuko's bubble
 
@@ -118,12 +123,12 @@ export function useMatchingTraining({ w, h, onLeave }: { w: number, h: number, o
 
     const talkTo = useCallback((npc: number) => setTalkRequest(r => ({ npc, key: (r?.key ?? 0) + 1 })), [])
 
-    const setStep = (s: Step) => { step.current = s; stepAt.current = performance.now() }
+    const setStep = (s: Step) => { step.current = s; stepMs.current = 0 } // clock: **performance.now() at the step's start** -> **game ms summed in onTick**, reason: in a throttled tab the 3 s ran out while the player couldn't move, mechanism: the timer only runs on frames, like dodge's timeLeft
 
     const ask = useCallback(() => {
-        const q = MT_QUESTIONS[current.current]
+        const q = questionsRef.current[current.current]
         if (!q) return
-        labels.current = shuffle([q.answer, ...q.decoys])
+        labels.current = shuffle([q.answer, ...shuffle(q.pool).slice(0, 2)]) // labels: **answer + fixed decoys** -> **answer + 2 random of the other three**, mechanism: a new draw every time the word is asked
         bubble.current = q.word
         setStep('ask')
         const c = center(sizeRef.current.w, sizeRef.current.h)
@@ -150,9 +155,10 @@ export function useMatchingTraining({ w, h, onLeave }: { w: number, h: number, o
     // Ryuuko's verdict in her bubble and voice; returns the clip's length so
     // the next word waits for it (0 for a clip that isn't rendered yet)
 
-    const onTick = useCallback((_dt: number, player: PlayerBox) => {
+    const onTick = useCallback((dt: number, player: PlayerBox) => {
         if (phaseRef.current !== 'play') return
-        const since = performance.now() - stepAt.current
+        stepMs.current += dt * 1000
+        const since = stepMs.current
         if (step.current === 'ask') {
             if (since >= ASK_MS) setStep('pick')
             return
@@ -161,7 +167,7 @@ export function useMatchingTraining({ w, h, onLeave }: { w: number, h: number, o
         // the areas are out once ASK_MS has passed; nothing is checked until
         // the 3 s timer runs out, so the player can walk between them
 
-        const q = MT_QUESTIONS[current.current]
+        const q = questionsRef.current[current.current]
         const boxes = areaBoxes(sizeRef.current.w, sizeRef.current.h)
         const feetY = player.y + player.h / 2 - FEET_IN
         const i = boxes.findIndex(b => player.x >= b.x && player.x <= b.x + b.w && feetY >= b.y && feetY <= b.y + b.h) // test: **the body's center** -> **the feet**, reason: the player looked inside an area but its center was still above it, mechanism: a point FEET_IN px above the body's bottom edge, at its center x
@@ -183,7 +189,7 @@ export function useMatchingTraining({ w, h, onLeave }: { w: number, h: number, o
         timer.current = setTimeout(() => {
             timer.current = undefined
             if (phaseRef.current !== 'play') return
-            if (current.current >= MT_QUESTIONS.length) { setPhase('success'); talkTo(RYUUKO) }
+            if (current.current >= questionsRef.current.length) { setPhase('success'); talkTo(RYUUKO) }
             else ask()
         }, Math.max(RESULT_MS, said))
         // right: 正解！ then the next word (or success after the last one);
@@ -221,7 +227,7 @@ export function useMatchingTraining({ w, h, onLeave }: { w: number, h: number, o
                 style: {
                     position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, boxSizing: 'border-box', zIndex: 0,
                     background: AREA_COLORS[i].fill, opacity: AREA_ALPHA, border: `${AREA_FRAME}px solid ${AREA_COLORS[i].frame}`,
-                    color: 'white', fontSize: 16, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none',
+                    color: 'white', fontSize: 12, fontWeight: 'bold', lineHeight: 1.2, textAlign: 'center', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', // font: **16, one line** -> **12, wraps, centered**, reason: labels like "that kind of (over there)" have to fit the 72 px area
                 },
             }, labels.current[i])) : []),
         )
@@ -232,13 +238,13 @@ export function useMatchingTraining({ w, h, onLeave }: { w: number, h: number, o
 
     const getHud = useCallback((): TrainingHud => {
         const pick = phaseRef.current === 'play' && step.current === 'pick'
-        const left = pick ? Math.max(0, TIMER_MS - (performance.now() - stepAt.current)) : TIMER_MS
-        const q = MT_QUESTIONS[Math.min(current.current, MT_QUESTIONS.length - 1)]
+        const left = pick ? Math.max(0, TIMER_MS - stepMs.current) : TIMER_MS
+        const q = questionsRef.current[Math.min(current.current, questionsRef.current.length - 1)]
         return {
             target: q.word,
             romaji: q.romaji,
             current: current.current,
-            quota: MT_QUESTIONS.length,
+            quota: questionsRef.current.length,
             hp: 1,
             maxHP: 1,
             secondsLeft: Math.ceil(left / 1000),
@@ -251,7 +257,7 @@ export function useMatchingTraining({ w, h, onLeave }: { w: number, h: number, o
     // the timer strip just then. No hp in the prototype
 
     const playerLabel = useCallback((): string | undefined =>
-        phaseRef.current === 'play' ? `${current.current}/${MT_QUESTIONS.length}` : undefined, [])
+        phaseRef.current === 'play' ? `${current.current}/${questionsRef.current.length}` : undefined, [])
 
     return { phase, onTick, onChoice, onTalkEnd, renderWorld, getHud, playerLabel, talkRequest, moveRequest }
 }
