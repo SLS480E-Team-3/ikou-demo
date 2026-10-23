@@ -10,7 +10,7 @@ Open one demo screen full-screen on a real phone. Spec: [mobile-testing.spec.jso
 | `/MobDev/<ScreenType>` | That screen, full-screen |
 | `/MobDev/<ScreenType>?island=N&sens=X` | Same, with settings |
 
-Screen types: `GameScene`, `QuestOriginal`, `QuestShoot`, `QuestDodge`, `QuestMatching`, `QuestDoor`, `SignUp`, `LogIn`, `InfoRecovery`, `EditInfo`, `DialogBubble`. Any other name is a 404.
+Screen types: `GameScene`, `QuestOriginal`, `QuestShoot`, `QuestDodge`, `QuestMatching`, `QuestInBetween`, `QuestDoor`, `SignUp`, `LogIn`, `InfoRecovery`, `EditInfo`, `DialogBubble`. Any other name is a 404.
 
 Settings (optional query):
 - `island`: island for `GameScene` (default 1, clamped to a real island).
