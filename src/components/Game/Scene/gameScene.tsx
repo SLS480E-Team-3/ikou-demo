@@ -387,7 +387,7 @@ export const ZOOM_DEF = 1.5 // export: **local** -> **exported**, reason: the pi
 const ZOOM_MIN = 0.5
 const ZOOM_MAX = 4
 
-export const clampZoom = (z: number) => Math.min(Math.max(z, ZOOM_MIN), ZOOM_MAX)
+export const clampZoom = (z: number, min = ZOOM_MIN) => Math.min(Math.max(z, min), ZOOM_MAX) // args: **z** -> **+ min = ZOOM_MIN**, reason: the dodge dojo zooms out until the whole room shows, mechanism: GameScene passes its zoomMinRef (below ZOOM_MIN only with fitWhole); every other caller keeps ZOOM_MIN
 // one place for the zoom limits, shared by the wheel and the pinch so both
 // stop at the same min/max
 
@@ -397,11 +397,11 @@ const ZOOM_EASE_RATE = 0.3 // fraction of the gap to the target zoom closed per 
 // the wheel/pinch set a target zoom and the tick eases toward it, so a
 // wheel notch glides instead of jumping
 
-export const wheelZoom = (e: WheelEvent, target: { current: number }) => {
+export const wheelZoom = (e: WheelEvent, target: { current: number }, min = ZOOM_MIN) => { // args: **+ min**, mechanism: handed on to clampZoom
     e.preventDefault()
     const delta = e.deltaY * (e.deltaMode === 1 ? 16 : 1)
     const rate = e.ctrlKey ? PINCH_WHEEL_RATE : WHEEL_ZOOM_RATE
-    target.current = clampZoom(target.current * Math.exp(-delta * rate))
+    target.current = clampZoom(target.current * Math.exp(-delta * rate), min)
 }
 // one wheel -> target zoom step for the scene's wheel listener (the stick
 // overlay is inside the scene div now, so its wheel events bubble up to that
@@ -548,7 +548,7 @@ const WALK_SPEED = PLAYER_SPEED * SPRINT
 // walks a WalkPath straight through its points (solids ignored), then calls
 // onArrive
 
-export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sensitivity = SENSITIVITY_DEF, objects = NO_OBJECTS, npcs = NO_NPCS, onQuest, onChoice, onTalkEnd, onTick, renderWorld, talkRequest, moveRequest, wallY, playerLabel, onShoot, feetH, tintEdges, onTap, walkPath, onArrive }: { onTap?: (tap: SceneTap) => void, walkPath?: WalkPath, onArrive?: () => void, bgProps?: BGProps, player?: PlayerProps, screenSize?: { w: number, h: number }, sensitivity?: number, objects?: PlacedObject[], npcs?: SceneNPC[], onQuest?: (npc: number) => void, onChoice?: (npc: number, choice: number) => void, onTalkEnd?: (npc: number) => void, onTick?: (dt: number, player: PlayerBox) => void, renderWorld?: () => ReactNode, talkRequest?: { npc: number, key: number }, moveRequest?: { x: number, y: number, key: number }, wallY?: number, playerLabel?: () => string | undefined, onShoot?: () => boolean, feetH?: number, tintEdges?: boolean }) { // props: **+ tintEdges?**, reason: Safari's status-bar strip kept the color it sampled at load while the camera moved, mechanism: see edge tint below // props: **no feetH** -> **feetH?**, reason: in the Left or Right room only the player's feet should hit the walls, mechanism: when set, the move checks use the bottom feetH px of the body instead of the whole body; unset = whole body, so every other scene is unchanged // // props: **no onShoot** -> **onShoot?**, reason: the shooting quest copy fires bullets with Space / a tap, mechanism: returns true when it fired; Space falls back to talking and taps to the stick / pinch when it returns false or is unset, so every other caller is unchanged // props: **no playerLabel** -> **playerLabel?**, reason: Quest Island shows current/quota over the player, mechanism: called every render (the scene force()-renders each frame) and its string replaces the name tag; undefined keeps the real name // props: **no onChoice / onTick / renderWorld / talkRequest** -> **optional hooks**, reason: the Quest Island runs a minigame on top of the scene, mechanism: onChoice gets every choice tap (npc index, choice index), onTick runs each frame after the player moves, renderWorld draws extra world-px children, talkRequest opens a talk with an NPC when its key changes; islands pass none, so they behave as before // props: **no onQuest** -> **onQuest?**, reason: NPCs offer the island's next quest, mechanism: called when the player picks choice 0 (はい); left out = no quest open, so NPCs skip their 'quest' entry // props: **moveInput?, zoomInput?** -> **sensitivity?**, reason: MobileGameScene merged into GameScene so edits happen in one place, mechanism: the joystick and pinch live here now and write to the scene's own stickRef / zoomTarget, so no caller passes refs in; sensitivity is the one knob MobileGameScene had on top // props: **no npcs** -> **npcs?**, reason: entities with dialog in the scene, mechanism: each is drawn with EntityRenderer at its bottom-edge zIndex like the player; optional so a bare <GameScene /> has none // props: **no objects** -> **objects?**, reason: an island draws its map, mechanism: a PlacedObject list (island_N.ts) resolved against the OBJECTS catalog below; optional so a bare <GameScene /> is an empty field // props: **no onTalkEnd** -> **onTalkEnd?**, reason: the Quest Island moves on after a talk without choices (Ryuuko's おつかれさま！), mechanism: endTalk calls it with the NPC index, before onChoice on a choice tap // props: **no wallY** -> **wallY?**, reason: during Quest Island training the player could stand next to Ryuuko and catch every block, mechanism: a world-px y the player's top edge can't go above, applied in the tick's y clamp; undefined = no wall
+export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sensitivity = SENSITIVITY_DEF, objects = NO_OBJECTS, npcs = NO_NPCS, onQuest, onChoice, onTalkEnd, onTick, renderWorld, talkRequest, moveRequest, wallY, playerLabel, onShoot, feetH, tintEdges, onTap, walkPath, onArrive, fitWhole }: { fitWhole?: boolean, onTap?: (tap: SceneTap) => void, walkPath?: WalkPath, onArrive?: () => void, bgProps?: BGProps, player?: PlayerProps, screenSize?: { w: number, h: number }, sensitivity?: number, objects?: PlacedObject[], npcs?: SceneNPC[], onQuest?: (npc: number) => void, onChoice?: (npc: number, choice: number) => void, onTalkEnd?: (npc: number) => void, onTick?: (dt: number, player: PlayerBox) => void, renderWorld?: () => ReactNode, talkRequest?: { npc: number, key: number }, moveRequest?: { x: number, y: number, key: number }, wallY?: number, playerLabel?: () => string | undefined, onShoot?: () => boolean, feetH?: number, tintEdges?: boolean }) { // props: **+ tintEdges?**, reason: Safari's status-bar strip kept the color it sampled at load while the camera moved, mechanism: see edge tint below // props: **no feetH** -> **feetH?**, reason: in the Left or Right room only the player's feet should hit the walls, mechanism: when set, the move checks use the bottom feetH px of the body instead of the whole body; unset = whole body, so every other scene is unchanged // // props: **no onShoot** -> **onShoot?**, reason: the shooting quest copy fires bullets with Space / a tap, mechanism: returns true when it fired; Space falls back to talking and taps to the stick / pinch when it returns false or is unset, so every other caller is unchanged // props: **no playerLabel** -> **playerLabel?**, reason: Quest Island shows current/quota over the player, mechanism: called every render (the scene force()-renders each frame) and its string replaces the name tag; undefined keeps the real name // props: **no onChoice / onTick / renderWorld / talkRequest** -> **optional hooks**, reason: the Quest Island runs a minigame on top of the scene, mechanism: onChoice gets every choice tap (npc index, choice index), onTick runs each frame after the player moves, renderWorld draws extra world-px children, talkRequest opens a talk with an NPC when its key changes; islands pass none, so they behave as before // props: **no onQuest** -> **onQuest?**, reason: NPCs offer the island's next quest, mechanism: called when the player picks choice 0 (はい); left out = no quest open, so NPCs skip their 'quest' entry // props: **moveInput?, zoomInput?** -> **sensitivity?**, reason: MobileGameScene merged into GameScene so edits happen in one place, mechanism: the joystick and pinch live here now and write to the scene's own stickRef / zoomTarget, so no caller passes refs in; sensitivity is the one knob MobileGameScene had on top // props: **no npcs** -> **npcs?**, reason: entities with dialog in the scene, mechanism: each is drawn with EntityRenderer at its bottom-edge zIndex like the player; optional so a bare <GameScene /> has none // props: **no objects** -> **objects?**, reason: an island draws its map, mechanism: a PlacedObject list (island_N.ts) resolved against the OBJECTS catalog below; optional so a bare <GameScene /> is an empty field // props: **no onTalkEnd** -> **onTalkEnd?**, reason: the Quest Island moves on after a talk without choices (Ryuuko's おつかれさま！), mechanism: endTalk calls it with the NPC index, before onChoice on a choice tap // props: **no wallY** -> **wallY?**, reason: during Quest Island training the player could stand next to Ryuuko and catch every block, mechanism: a world-px y the player's top edge can't go above, applied in the tick's y clamp; undefined = no wall
     // props are optional (?) because they have defaults -- lets a page mount
     // a bare <GameScene /> while the db-backed bg/player aren't wired yet.
     // screenSize has no default and isn't read yet, so it's undefined for now
@@ -569,6 +569,10 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
     // through ent?. and fall back to the bg center (where the camera already
     // looks) -- keeps the ref typed as plain numbers
     const zoomRef = useRef<number>(ZOOM_DEF)
+    const zoomMinRef = useRef(ZOOM_MIN)
+    // the farthest zoom-out the wheel / pinch allow, set each tick (see fitWhole)
+    const fitWholeRef = useRef(fitWhole)
+    fitWholeRef.current = fitWhole
     const zoomTarget = useRef<number>(ZOOM_DEF) // target: **zoomInput ?? own ref** -> **own ref**, reason: the pinch moved in here, mechanism: wheel and pinch both write this one ref
     // zoomRef = the zoom drawn this frame; zoomTarget = where the wheel/pinch
     // wants it. Both are stable ref objects, so the mount-time tick/wheel
@@ -776,7 +780,10 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
             // rescales it by dt so a 120Hz or laggy screen follows at the same
             // speed (closing 0.4 twice at 120Hz would overshoot 60Hz's 0.4)
 
-            const fitZoom = sceneSizeRef.current.w / bg.w
+            const fitZoom = fitWholeRef.current ? Math.min(sceneSizeRef.current.w / bg.w, sceneSizeRef.current.h / bg.h) : sceneSizeRef.current.w / bg.w // floor: **width fills the screen** -> **the whole world fits with fitWhole**, reason: QuestDodge couldn't zoom out far enough to see the whole dojo, mechanism: the smaller of the two fit ratios, so both sides are on screen; without fitWhole unchanged
+            zoomMinRef.current = fitWholeRef.current ? Math.min(ZOOM_MIN, fitZoom) : ZOOM_MIN
+            // with fitWhole the wheel / pinch may go below ZOOM_MIN, down to
+            // the whole-world fit (a phone's portrait dojo needs ~0.46)
             if (zoomTarget.current < fitZoom) zoomTarget.current = Math.min(fitZoom, ZOOM_MAX)
             // zoom-out floor: **ZOOM_MIN only** -> **+ world width fills the screen**, reason: on a wide desktop window zooming out showed past the island's sides, mechanism: the target can't go below screen w / world w, so the farthest zoom-out is the island edge to edge; a phone's fitZoom (~0.28) is under ZOOM_MIN, so phones are unchanged
             const zoomFollow = 1 - Math.pow(1 - ZOOM_EASE_RATE, dt * 60)
@@ -859,7 +866,7 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
     useEffect(() => {
         const el = sceneRef.current
         if (!el) return
-        const handleWheel = (e: WheelEvent) => wheelZoom(e, zoomTarget) // body: **inline wheel math** -> **wheelZoom helper**, mechanism: the math moved into wheelZoom above, unchanged
+        const handleWheel = (e: WheelEvent) => wheelZoom(e, zoomTarget, zoomMinRef.current) // body: **inline wheel math** -> **wheelZoom helper**, mechanism: the math moved into wheelZoom above, unchanged
         el.addEventListener('wheel', handleWheel, { passive: false })
         return (() => {
             el.removeEventListener('wheel', handleWheel)
@@ -1198,7 +1205,7 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
         pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
         const pinch = pinchRef.current
         if (pinch && pointersRef.current.size >= 2) {
-            zoomTarget.current = clampZoom(pinch.zoom0 * fingerDist() / pinch.dist0)
+            zoomTarget.current = clampZoom(pinch.zoom0 * fingerDist() / pinch.dist0, zoomMinRef.current)
         }
     }
 

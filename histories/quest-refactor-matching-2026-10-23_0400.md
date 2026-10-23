@@ -28,3 +28,8 @@
 - Render the new Ryuuko clips: `python/` isn't in this repo, so run dialog.py render from `../ikko` (or copy the mp3s into `public/dialog/ryuuko/`).
 - Add それ / あれ / どれ (English labels for それ vs あれ TBD), then the other こそあど groups.
 - #7: read `quests.quest_type` on the quest page and pick the island component from it.
+
+## Follow-up: QuestDodge zooms out to the whole dojo
+- `gameScene.tsx`: new `fitWhole` prop. With it, the zoom-out floor is the whole-world fit (min of screen w / world w and screen h / world h) instead of the width fit, and the wheel / pinch may go below ZOOM_MIN down to it (`clampZoom` / `wheelZoom` take a `min`, fed from `zoomMinRef`). Without it nothing changes.
+- `dodgeQuestIsland.tsx` passes `fitWhole`. The matching quest (same dojo) doesn't yet.
+- Checked on /MobDev/QuestDodge: 375 x 812 zooms out to the full dojo (walls, kamidana, entrance) centered; 1400 x 900 too (it used to stop at the width fit, cutting the top and bottom). `npx tsc --noEmit` clean. Not committed.
