@@ -109,10 +109,17 @@ const waveOffset = (now: number) => Math.round(-WAVE_RISE * (1 - Math.cos((now /
 // for each next merged border, so two borders do not show the same line; it
 // is a multiple of 4, so the mask's pixels stay on the 4 px art grid
 
-export const ISLAND_COUNT = 1 // count: **5** -> **1**, mechanism: the demo ships island 1 only
+export const ISLAND_COUNT = 5 // count: **1** -> **5**, mechanism: islands 2–5 are back, as ikko-vision.pdf lays them out // count: **5** -> **1**, mechanism: the demo ships island 1 only
 export const ISLAND_BG: Record<number, string> = {
     1: '#f5e8a0', // key: **2** -> **1**, mechanism: islands renumbered (1 -> 5, 2 -> 1, 3 -> 2), the color moves with its scene // color: **yellow** -> **#f5e8a0**, mechanism: pastel yellow, same softness as lightgreen
+    2: '#b5d98a',
+    3: '#a9cf7a',
+    4: '#c9c3b5',
+    5: '#7a3f2e',
 }
+// the flat color under each island's sections, the same as the section the
+// player spawns on (2 meadow, 3 clearing, 4 town street, 5 volcano soil), so
+// a gap between sections never shows a different color
 export const ISLAND_SECTIONS: Record<number, BgSection[]> = {
     1: [ // key: **2** -> **1**, mechanism: islands renumbered (1 -> 5, 2 -> 1, 3 -> 2)
         { id: 'volcano', x: 0, y: 0, w: 1400, h: 500, color: '#8f4a36' }, // color, tile: **#853d2a, /img/bg/red-rock.webp** -> **#8f4a36, none**, mechanism: the ground is one plain color (red-brown), no texture; with no tile the section div shows only its backgroundColor
@@ -124,6 +131,43 @@ export const ISLAND_SECTIONS: Record<number, BgSection[]> = {
         // bottom edge through the mask, so the shore is an uneven, dithered
         // line like the other borders
     ],
+    2: [
+        { id: 'hill', x: 0, y: 0, w: 1400, h: 600, color: '#8fbf63' },
+        { id: 'meadow', x: 0, y: 600, w: 1400, h: 1000, color: '#b5d98a', merge: true },
+        { id: 'beach', x: 0, y: 1600, w: 1400, h: 100, color: '#f3e9c6', merge: true },
+        { id: 'ocean', x: 0, y: 1700, w: 1400, h: 300, color: '#87ceeb', merge: true, solid: true, wave: true },
+    ],
+    // island 2, the こそあど meadow (docs/scenes/kosoado-meadow.md): a wide
+    // open grass field with the spawn in it, a darker grass hill at the top
+    // for the far (あ) landmarks, a thin beach and island 1's ocean. Few
+    // props, so near / by-the-listener / far reads at a glance
+    3: [
+        { id: 'forest', x: 0, y: 0, w: 1400, h: 800, color: '#7fae5a' },
+        { id: 'clearing', x: 0, y: 800, w: 1400, h: 800, color: '#a9cf7a', merge: true },
+        { id: 'bank', x: 0, y: 1600, w: 1400, h: 100, color: '#f3e9c6', merge: true },
+        { id: 'river', x: 0, y: 1700, w: 1400, h: 300, color: '#87ceeb', merge: true, solid: true },
+    ],
+    // island 3, the forest-island scene copied from ../ikko
+    // (docs/scenes/forest-island.md): dark moss forest, the light moss
+    // clearing with the spawn, a strip of sand and the river (solid, no wave)
+    4: [
+        { id: 'hill', x: 0, y: 0, w: 1400, h: 500, color: '#a9cf7a' },
+        { id: 'town', x: 0, y: 500, w: 1400, h: 900, color: '#c9c3b5', merge: true },
+        { id: 'pier', x: 0, y: 1400, w: 1400, h: 250, color: '#b88a5a' },
+        { id: 'harbor', x: 0, y: 1650, w: 1400, h: 350, color: '#5fa8d8', merge: true, solid: true, wave: true },
+    ],
+    // island 4, the port town (docs/scenes/port-town.md): a green hill
+    // behind the town, the stone-grey town streets with the spawn, a wooden
+    // pier (no merge, so its edge stays a straight plank line) and a deeper
+    // blue harbor that waves like island 1's ocean
+    5: [
+        { id: 'volcano', x: 0, y: 0, w: 1400, h: 1700, color: '#7a3f2e' },
+        { id: 'magma', x: 0, y: 1700, w: 1400, h: 300, color: '#f08a24', merge: true, solid: true, wave: true },
+    ],
+    // island 5, the final-boss lair: ../ikko's volcano scene
+    // (docs/scenes/volcano.md), dark volcano soil down to a magma shore that
+    // rises and falls and pushes the player up. A placeholder until the boss
+    // is planned (GitHub issue "Island 5")
 } // sections: **{}** -> **island 2's three sections**, mechanism: the tropical-island scene (docs/scenes/tropical-island.md): three full-width bands that cover the 1400 x 2000 world top to bottom; each is one plain color with no tile (moss light green, sand off-white and a bit yellow, volcano sand red-brown)
 // the ground sections of each island, keyed by island id. The /make-scene
 // skill adds an island's entry when it builds that scene. An island with no

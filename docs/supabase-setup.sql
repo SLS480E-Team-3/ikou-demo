@@ -173,3 +173,22 @@ insert into storage.buckets (id, name, public) values
 on conflict (id) do nothing;
 
 commit;
+
+-- Islands 2–5 (ikko-vision.pdf): maps + NPCs, placeholder quests
+-- The code keys maps by islands.id, so on a fresh project ids 2–5 must match sort_order 2–5.
+-- threshold = points needed on the previous island: island 1 has 21 quests (210 points), islands 2–4 have 5 placeholders (50).
+insert into islands (name, threshold, sort_order) values
+  ('Kosoado Meadow', 100, 2),
+  ('Forest Island', 50, 3),
+  ('Port Town', 50, 4),
+  ('Boss Island', 50, 5)
+on conflict (sort_order) do nothing;
+
+-- placeholder quests: one per island NPC (kana あ–お), run as the dodge quest
+-- until each island's real quests are planned in its "Island X" GitHub issue; delete these then
+insert into quests (island_id, title, reward_points, kana)
+select i.id, 'Island ' || i.sort_order || ' placeholder: ' || k.kana, 10, k.kana
+from islands i
+cross join unnest(array['あ','い','う','え','お']) as k(kana)
+where i.sort_order between 2 and 5
+  and not exists (select 1 from quests q where q.island_id = i.id and q.kana = k.kana);

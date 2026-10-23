@@ -18,7 +18,7 @@ export async function homeIsland(supabase: SupabaseClient, userId: string): Prom
 // `supabase` must be signed in as userId -- RLS lets them read profiles
 // and islands
 
-export const islandQuestType = (_islandId: number): QuestType => 'dodge' // types: **1 dodge, 2 door, 3 particle, else original** -> **always dodge**, mechanism: the demo ships island 1 only // types: **2 = dodge, 3 = door** -> **1 = dodge, 2 = door**, mechanism: the quests follow their scenes when the islands were renumbered (2 -> 1, 3 -> 2)
+export const islandQuestType = (_islandId: number): QuestType => 'dodge' // islands 2–5: **none** -> **dodge too**, mechanism: they have maps and NPCs now, but their own quest types are still planned in the "Island X" GitHub issues, so their placeholder quests run the dodge quest // types: **1 dodge, 2 door, 3 particle, else original** -> **always dodge**, mechanism: the demo ships island 1 only // types: **2 = dodge, 3 = door** -> **1 = dodge, 2 = door**, mechanism: the quests follow their scenes when the islands were renumbered (2 -> 1, 3 -> 2)
 // which quest island an island's NPCs send the player to: island 1 runs the
 // dodge quest (DodgeQuestIsland), island 2 the door quest, island 3 the
 // particle quest (ParticleQuestIsland)
