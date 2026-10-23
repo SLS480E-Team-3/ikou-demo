@@ -766,8 +766,10 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
             const view = viewPortRef.current
             const follow = 1 - Math.pow(1 - VIEWPORT_FOLLOW_RATE, dt * 60)
             const focus = talkEnt ? { x: talkEnt.x ?? 0, y: (talkEnt.y ?? 0) - talkEnt.h } : ent // target: **player** -> **talking NPC, else player**, reason: a selected NPC zooms in on it, mechanism: same easing, only the point it eases to changes; one body height up so the bubble above the head fits in the zoomed view too
-            view.x += ((focus?.x ?? view.x) - view.x) * follow
-            view.y += ((focus?.y ?? view.y) - view.y) * follow
+            if (talkEnt || !lookRef.current) {
+                view.x += ((focus?.x ?? view.x) - view.x) * follow
+                view.y += ((focus?.y ?? view.y) - view.y) * follow
+            } // follow: **always** -> **not while looking around**, reason: a drag pans the camera over the island, mechanism: lookRef (set by the drag, cleared when a walk starts) skips the easing so the camera stays where it was dragged; the clamp below still keeps it inside the world
             // the camera closes a fraction of the gap to the player each frame,
             // so it eases in behind them instead of being locked on.
             // VIEWPORT_FOLLOW_RATE is the fraction per 60fps frame; the pow
@@ -909,6 +911,7 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
         activeIdRef.current = null
         stickRef.current = { x: 0, y: 0 }
         setStick(null)
+        panRef.current = null // release: **stick only** -> **+ pan**, mechanism: a pinch starting mid-drag ends the pan, so the next drag starts from its own down spot
     }
     // shared by up / cancel / lost capture: without it the player would keep
     // walking after the thumb lifts or iOS cancels the touch (e.g. a
@@ -1003,6 +1006,7 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
     const walkRef = useRef<{ points: WalkPath['points'], i: number } | null>(null)
     useEffect(() => {
         if (walkPath?.points.length) walkRef.current = { points: walkPath.points, i: 0 }
+        lookRef.current = false // look: **none** -> **cleared on a new walk**, mechanism: tapping a tile hands the camera back to the player
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [walkPath?.key])
     // latest onTap / onArrive for the mount-time tick, and the WalkPath being
@@ -1011,6 +1015,12 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
     const onShootRef = useRef(onShoot)
     onShootRef.current = onShoot
     const tapRef = useRef<{ t: number, x: number, y: number } | null>(null)
+    const lookRef = useRef(false)
+    const panRef = useRef<{ x: number, y: number } | null>(null)
+    // look around (tap mode): a mouse or finger drag pans the camera instead
+    // of tapping. panRef = the pointer's last client spot while panning, null
+    // = not panning (yet); lookRef = the camera stays where it was dragged
+    // instead of following the player
     // onShootRef: latest onShoot for the mount-time key listener. tapRef: when
     // and where the stick's finger went down, so its release can tell a quick
     // tap (shoot) from a hold / drag (walk)
@@ -1108,6 +1118,27 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
     // so they match the drawing below
 
     const handleMove = (e: PointerEvent<HTMLDivElement>) => {
+        if (onTap && e.pointerId === activeIdRef.current && !pinchRef.current) {
+            const tap = tapRef.current
+            if (!panRef.current && tap && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) >= TAP_PX) panRef.current = { x: tap.x, y: tap.y }
+            const pan = panRef.current
+            if (pan) {
+                const zoom = zoomRef.current
+                const view = viewPortRef.current
+                const bg = bgRef.current
+                const halfW = sceneSizeRef.current.w / 2 / zoom
+                const halfH = sceneSizeRef.current.h / 2 / zoom
+                view.x = bg.w <= halfW * 2 ? bg.w / 2 : Math.min(Math.max(view.x - (e.clientX - pan.x) / zoom, halfW), bg.w - halfW)
+                view.y = bg.h <= halfH * 2 ? bg.h / 2 : Math.min(Math.max(view.y - (e.clientY - pan.y) / zoom, halfH), bg.h - halfH)
+                panRef.current = { x: e.clientX, y: e.clientY }
+                lookRef.current = true
+            }
+            return
+        }
+        // drag to look around (tap mode only; free roam's drag is the stick):
+        // once the pointer moves TAP_PX from where it went down it pans, and
+        // the world moves with it (client px / zoom = world px). Clamped like
+        // the tick's camera clamp so the drag can't push past the world edge
         if (e.pointerId !== activeIdRef.current || !stick || pinchRef.current) return
         const rect = e.currentTarget.getBoundingClientRect()
         const dx = e.clientX - rect.left - stick.base.x
@@ -1129,8 +1160,10 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
         if (e.pointerId !== activeIdRef.current) return
         const tap = tapRef.current
         tapRef.current = null
+        const panned = panRef.current !== null
+        panRef.current = null // tap: **any lift near the start** -> **not after a pan**, mechanism: a drag that comes back near where it started is still a look-around, not a tile tap
         if (e.type === 'pointerup' && tap && performance.now() - tap.t < TAP_MS && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < TAP_PX) onShootRef.current?.()
-        if (onTap && e.type === 'pointerup' && tap && !pinchRef.current && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < TAP_PX) {
+        if (onTap && e.type === 'pointerup' && tap && !panned && !pinchRef.current && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < TAP_PX) {
             const r = e.currentTarget.getBoundingClientRect()
             const view = viewPortRef.current
             onTap({
