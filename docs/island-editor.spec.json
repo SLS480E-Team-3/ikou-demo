@@ -1,0 +1,315 @@
+{
+  "$schema": "../.claude/spec.schema.json",
+  "status": "clear",
+  "title": "Island Editor",
+  "idea": "A browser dev tool where a developer builds an island by placing objects and NPCs, giving each NPC a quest, and setting the background color and ground sections, then saves it as a versioned JSON file.",
+  "glossary": [
+    {
+      "term": "island editor",
+      "meaning": "A dev-only page in the browser for building one island's layout visually instead of typing coordinates into islands.ts."
+    },
+    {
+      "term": "dev",
+      "meaning": "A developer on the team (not a player) who uses the editor."
+    },
+    {
+      "term": "sprite / object",
+      "meaning": "A PlacedObject: an entry from the object catalog (objects.ts, e.g. palm-tree, volcano) placed at a world position with a scale and an optional sign."
+    },
+    {
+      "term": "NPC",
+      "meaning": "A character on the island (Shuto, Jordi, Tiffany, Genki, Sarah...) with a position and dialog from npcs/dialogs/<npc>.json."
+    },
+    {
+      "term": "quest (for an NPC)",
+      "meaning": "The quest an NPC offers when the player talks to it; today this is matched by kana to a row in the Supabase quests table."
+    },
+    {
+      "term": "bg color",
+      "meaning": "The island's base ground color (ISLAND_BG), shown wherever no section covers the world."
+    },
+    {
+      "term": "separation / section",
+      "meaning": "A BgSection: a full-width ground band (e.g. volcano, forest, beach, ocean) with its own color and a border to the next band."
+    },
+    {
+      "term": "phone view",
+      "meaning": "The island in a phone-sized frame at real game zoom, where touch walks the player around to test it."
+    },
+    {
+      "term": "island_index",
+      "meaning": "The island's number (islands.id), e.g. 1 for the tropical island."
+    },
+    {
+      "term": "ver<iterative>",
+      "meaning": "A version number that goes up by one with each save of the same island: 1_ver1.json, 1_ver2.json, ..."
+    },
+    {
+      "term": "asset box",
+      "meaning": "The editor's palette of placeable things, grouped in folder dropdowns: npcs/ and objects/."
+    },
+    {
+      "term": "level (quest)",
+      "meaning": "The lesson level a quest belongs to, e.g. vocab or meaning."
+    },
+    {
+      "term": "quest type",
+      "meaning": "Which quest game runs, e.g. dodge or door."
+    },
+    {
+      "term": "target",
+      "meaning": "What the quest tests: a kana for dodge, or answer + decoy words for door."
+    },
+    {
+      "term": "separator",
+      "meaning": "The y coordinate where the dithered border line between a section and the one above it is drawn."
+    }
+  ],
+  "features": [
+    {
+      "id": "F-1",
+      "name": "Object placement",
+      "whatItDoes": "Pick an object from the catalog and place it on the island.",
+      "details": [
+        "Writes PlacedObject data: def, x, y, scale, optional sign interaction.",
+        "An asset box lists everything placeable in folder dropdowns: asset box / npcs / and asset box / objects /.",
+        "Pick an item in the asset box, click the canvas to drop it, drag it to move it.",
+        "A side panel shows the selected item's x, y, scale and sign text for fine-tuning.",
+        "The selected item can be deleted (Delete key or button) or duplicated (copy placed next to it).",
+        "The selected sprite can be scaled on the canvas (drag a corner handle) as well as by the scale field in the side panel."
+      ]
+    },
+    {
+      "id": "F-2",
+      "name": "NPC placement",
+      "whatItDoes": "Place NPCs on the island.",
+      "details": [
+        "NPCs come from the asset box's npcs/ folder and are placed and moved the same way as objects (click to drop, drag, side panel)."
+      ]
+    },
+    {
+      "id": "F-3",
+      "name": "Quest per NPC",
+      "whatItDoes": "Choose which quest each NPC offers.",
+      "details": [
+        "The side panel has a quest dropdown for the selected NPC, plus the quest's props.",
+        "Quests can be created and edited in the side panel; they are saved to the Supabase quests table.",
+        "Quest props: level (e.g. vocab, meaning), quest type (e.g. dodge, door) and target.",
+        "Target shape depends on the quest: a kana string for dodge (target: あ), or { answer: [...], decoys: [...] } for door (answer: 食べる, 歩く, 走る; decoys: 食べる, 歩く, 走る, 行く, 寝る).",
+        "Island and quest props are loaded from Supabase."
+      ]
+    },
+    {
+      "id": "F-4",
+      "name": "Background and sections",
+      "whatItDoes": "Set the island's base color and its ground sections (separations).",
+      "details": [
+        "Sections are an ordered array, top to bottom; each has start (y), end (y), color and separator (y).",
+        "separator is the y where the dithered border line between this section and the one above is drawn; it can differ from start.",
+        "start is optional: left out, it is 0 for the first section or the end of the section above.",
+        "The base bg color shows where no section covers the world."
+      ]
+    },
+    {
+      "id": "F-5",
+      "name": "Desktop / phone view switch",
+      "whatItDoes": "The editor is laid out for a desktop browser; a button switches the canvas to a phone-browser view.",
+      "details": [
+        "Phone view shows the island in a phone-sized frame at real game zoom.",
+        "In phone view, touch drives the game controls: the dev walks the player around to test the island."
+      ]
+    },
+    {
+      "id": "F-6",
+      "name": "Versioned save",
+      "whatItDoes": "Saving writes the island to island-editor/<island_index>_ver<N>.json, with N one higher than the last save.",
+      "details": [
+        "Saving works on the deployed Vercel site.",
+        "Files go to a Supabase Storage bucket named island-editor: <island_index>_ver<N>.json, N one higher than the highest.",
+        "The game fetches the newest version of an island, replacing the hand-written map in islands.ts."
+      ]
+    },
+    {
+      "id": "F-7",
+      "name": "Open a version",
+      "whatItDoes": "When the editor opens, the dev picks an island and any of its saved versions to start editing from.",
+      "details": [
+        "Saving always writes a new ver (one higher than the highest), never overwrites the opened one."
+      ]
+    },
+    {
+      "id": "F-10",
+      "name": "Open access",
+      "whatItDoes": "The editor page opens for anyone with the URL, without login, like /Dev.",
+      "details": [
+        "Anyone who opens it can save new versions and create or edit quests."
+      ]
+    },
+    {
+      "id": "F-11",
+      "name": "Sprite upload",
+      "whatItDoes": "Upload a new sprite image so it appears in asset box / objects/ and can be placed.",
+      "details": [
+        "The uploaded image is stored both in this repo (alongside the other sprites in public/img/) and in Supabase."
+      ]
+    },
+    {
+      "id": "F-12",
+      "name": "Undo / redo",
+      "whatItDoes": "Step back and forward through edits made in the current editing session.",
+      "details": [
+        "Covers placing, moving, scaling, deleting, duplicating, quest and section changes."
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "name": "Edit an island",
+      "steps": [
+        "Open the editor in a desktop browser.",
+        "Pick an island and one of its saved versions; the editor loads it (and its quests) from Supabase.",
+        "Open asset box / objects/ or npcs/, pick an item, click the canvas to drop it, drag to move, fine-tune x, y, scale and sign in the side panel.",
+        "Select an NPC and pick or create its quest: level, quest type, target.",
+        "Set the bg color and the sections (start, end, color, separator).",
+        "Press the phone-view button and walk the player around with touch / game controls to check it.",
+        "Save: a new <island_index>_ver<N>.json is written to the island-editor bucket.",
+        "The game now loads that newest version for the island."
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "situation": "Island 1 has saved 1_ver1 and 1_ver2; the dev opens 1_ver1, moves a palm tree and saves.",
+      "whatHappens": "1_ver3.json is written; 1_ver1 and 1_ver2 stay; the game loads 1_ver3."
+    },
+    {
+      "situation": "The dev places Shuto and gives him a quest with level vocab, quest type dodge, target あ.",
+      "whatHappens": "The quest is saved to the quests table and Shuto offers it on the island."
+    },
+    {
+      "situation": "The dev gives Jordi a door quest with answer 食べる, 歩く, 走る and decoys 食べる, 歩く, 走る, 行く, 寝る.",
+      "whatHappens": "The quest's target is stored as { answer, decoys } and the door quest uses those words."
+    },
+    {
+      "situation": "Sections: beach with no start and end 1700, then ocean with end 2000 and separator 1690.",
+      "whatHappens": "Beach starts at 0; ocean starts at 1700 (end of the beach) and its dithered border is drawn at y 1690."
+    }
+  ],
+  "leftOut": [
+    "Editing hitboxes: objects keep the catalog's hitbox.",
+    "Creating new NPCs or writing their dialog in the editor."
+  ],
+  "decisions": [
+    {
+      "id": "D-1",
+      "decision": "The spec lives in docs/island-editor.spec.json, not the repo root.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-2",
+      "decision": "Saved files are named <island_index>_ver<N>.json inside an island-editor folder.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-3",
+      "decision": "The game loads the saved JSON for an island instead of the hand-written islands.ts map.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-4",
+      "decision": "The island-editor folder is at the repo root.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-5",
+      "decision": "Placing: asset box with npcs/ and objects/ folder dropdowns, click to drop, drag to move, side panel for exact values.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-6",
+      "decision": "The editor opens any saved version of an island, chosen by the dev.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-7",
+      "decision": "Each NPC gets a quest from a dropdown, with props level, quest type and target.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-8",
+      "decision": "Sections: ordered array of { start?, end, color, separator }; start defaults to 0 or the end of the section above.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-9",
+      "decision": "Saving must work on Vercel; island and quest props load from Supabase.",
+      "reason": "Supersedes the repo-file part of D-3/D-4: a deployed site can't write repo files.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-10",
+      "decision": "Phone view is a phone-sized preview frame at game zoom, with touch interaction.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-11",
+      "decision": "Saved versions are files in a Supabase Storage bucket named island-editor.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-12",
+      "decision": "Quests are created and edited in the editor and saved to the Supabase quests table.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-13",
+      "decision": "A section's separator is the y of its dithered border line.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-14",
+      "decision": "Touch in phone view is the game's controls (walk the player), not editing.",
+      "reason": "Refines D-10.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-15",
+      "decision": "Anyone can open the editor and save, no login.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-16",
+      "decision": "Out of v1: sprite upload, undo/redo. In: delete + duplicate, hitbox editing, creating NPCs and dialog.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-17",
+      "decision": "v1 includes sprite upload, undo/redo and scaling sprites on the canvas; hitbox editing and creating NPCs/dialog are left out.",
+      "reason": "Corrects D-16, which had them the wrong way round.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-18",
+      "decision": "The editor's route is /IslandEditor.",
+      "date": "2026-10-22"
+    },
+    {
+      "id": "D-19",
+      "decision": "Uploaded sprites are stored in this repo and in Supabase.",
+      "date": "2026-10-22"
+    }
+  ],
+  "assumptions": [
+    {
+      "statement": "Saving always creates a new ver file; older versions are kept."
+    }
+  ],
+  "openQuestions": [
+    {
+      "question": "Sprite upload: what is set on upload (name, world size w/h)?"
+    },
+    {
+      "question": "Sprite upload on the deployed Vercel site can't write into the repo: does the repo copy happen only when running locally, or is it synced into the repo another way?"
+    }
+  ]
+}
