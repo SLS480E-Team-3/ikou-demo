@@ -1,6 +1,7 @@
 import { NPCProps } from "../Entity/npcRenderer";
 import type { Condition } from "../Entity/dialogBubble"; // import: **Dialog** -> **type Condition**, mechanism: the Dialogs are built in toNPCProps.ts now; this file only names the Quest Island scene's condition
 import { playSpot, throwSpot, type TrainingPhase } from "../Scene/training"; // import: **+ LEVELS, QuestsLevel, ENT_W / ENT_H (entityRenderer)** -> **without**, mechanism: the level buttons are in ryuuko.json and the body size is set by toNPCProps
+import type { MtPhase } from "../Scene/matchingTraining"; // import: **+ MtPhase**, mechanism: matchingNpcs picks Ryuuko's lines by the matching quest's phase
 import { KANA_ROWS } from "../kana";
 import { sceneDialog, toNPCProps, type NpcScript } from "./toNPCProps";
 import jordi from "./dialogs/jordi.json";
@@ -121,3 +122,19 @@ export const questIslandNpcs = (w: number, h: number, phase: TrainingPhase, targ
 // stands 60 px right of Ryuuko. Choices: Ryuuko はい starts / retries a
 // level, Elena はい leaves the quest island, いいえ ends the talk
 
+
+const MT_CONDITION: Record<MtPhase, Condition> = { intro: 'mt-intro', play: 'level1-start', success: 'level2-clear', again: 'mt-intro' }
+export const matchingNpcs = (w: number, h: number, phase: MtPhase): NPCProps[] => {
+    const cx = w / 2, cy = h / 2
+    const condition = MT_CONDITION[phase]
+    const withElena = phase === 'success' || phase === 'again'
+    return [
+        toNPCProps(ryuuko, cx, cy, sceneDialog(ryuuko, condition)),
+        ...(withElena ? [toNPCProps(elena, cx + 60, cy, sceneDialog(elena, phase === 'again' ? 'retry' : condition))] : []),
+    ]
+}
+// the matching quest's cast (issue #8) on the dodge quest's square dojo:
+// Ryuuko at the center (dodgeTraining's center), Elena 60 px right of her
+// after a clear. Same indices as questIslandNpcs (0 = Ryuuko, 1 = Elena).
+// Ryuuko gives the rules (mt-intro) before the run and again as her replay
+// offer, so はい always starts the run; おつかれさま！ after a clear

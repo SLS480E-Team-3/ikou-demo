@@ -7,6 +7,7 @@ export type Condition =
     | 'greeting' | 'default' | 'spoken' | 'quest' | 'questCleared' | 'retry'
     | `level${number}-${'start' | 'clear' | 'fail'}`
     | `lr-${'intro' | 'word' | 'correct' | 'wrong' | 'clear' | 'fail'}`
+    | `mt-${'intro' | 'correct' | 'wrong'}` // labels: **+ mt-...**, reason: the matching quest (issue #8) has its own lines, mechanism: mt-intro is Ryuuko's talk before the run, mt-correct / mt-wrong are read by matchingTraining.ts and shown in her bubble
     | `tut-${'ask' | 'bye'}` | // tut types: **+ 'particle'**, mechanism: Hiroko's tutorial for island 3's particle quest
     `tut-${'original' | 'dodge' | 'shoot' | 'door' | 'particle'}-${'touch' | 'keys'}` // labels: **+ tut-...**, reason: Hiroko's quest tutorials (docs/quest-tutorials.spec.json), mechanism: tut-ask is her first-time question, tut-bye her hand-off to Ryuuko, tut-<quest>-<touch|keys> the tutorial for one quest type and device // labels: **+ lr-...** , reason: the Left or Right quest (docs/left-or-right.spec.json) has its own lines, mechanism: lr-intro / lr-clear / lr-fail are NPC talks (sceneDialog), lr-word / lr-correct / lr-wrong are read by the quest hook and shown on its sign
 // when a Dialog is said. Island NPCs use the first five (picked by

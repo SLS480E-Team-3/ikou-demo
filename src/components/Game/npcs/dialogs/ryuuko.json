@@ -182,6 +182,49 @@
           "style": "teasing but encouraging, pushing the player to try again"
         }
       ]
+    },
+    {
+      "condition": "mt-intro",
+      "choices": [
+        ["はい", "Yes"],
+        ["いいえ", "No"]
+      ],
+      "lines": [
+        {
+          "kana": "ただしいいろにはいって！",
+          "text": "正しい色に入って！",
+          "en": "Stand in the right color!",
+          "style": "confident trainer, explaining the rule with a challenge in her voice"
+        },
+        {
+          "kana": "じゅんびはできてる？",
+          "text": "準備はできてる？",
+          "en": "Ready?",
+          "style": "confident trainer, a teasing challenge before the drill starts"
+        }
+      ]
+    },
+    {
+      "condition": "mt-correct",
+      "lines": [
+        {
+          "kana": "せいかい！",
+          "text": "正解！",
+          "en": "Correct!",
+          "style": "quick and pleased, a short bright praise"
+        }
+      ]
+    },
+    {
+      "condition": "mt-wrong",
+      "lines": [
+        {
+          "kana": "ちがうわよ！",
+          "text": "違うわよ！",
+          "en": "Wrong!",
+          "style": "quick teasing correction, not harsh"
+        }
+      ]
     }
   ]
 }

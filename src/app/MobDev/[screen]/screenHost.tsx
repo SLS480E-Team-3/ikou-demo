@@ -23,6 +23,11 @@ const SCREENS: Record<ScreenType, ComponentType<ScreenProps>> = {
         const C = m.DodgeQuestIsland
         return ({ sensitivity, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C sensitivity={sensitivity} onLeave={onLeave} /></>
     }), { ssr: false }), // adapter: **quest only** -> **+ Tint BUBBLE_BG**, mechanism: the quest island's cream fills the strips Safari leaves around the page
+    QuestMatching: dynamic(() => Promise.all([import("@/components/Game/Scene/matchingQuestIsland"), import("@/components/Game/Entity/dialogBubble")]).then(([m, { BUBBLE_BG }]) => {
+        const C = m.MatchingQuestIsland
+        return ({ sensitivity, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C sensitivity={sensitivity} onLeave={onLeave} /></>
+    }), { ssr: false }),
+    // QuestMatching: the matching quest prototype (issue #8), same adapter as QuestDodge
     SignUp: dynamic(() => import("@/app/SignUp/page"), { ssr: false }),
     LogIn: dynamic(() => import("@/app/LogIn/page"), { ssr: false }),
     InfoRecovery: dynamic(() => import("@/app/InfoRecovery/page"), { ssr: false }),

@@ -2,6 +2,7 @@
 export const SCREEN_TYPES = [
     'GameScene',
     'QuestDodge',
+    'QuestMatching',
     'SignUp',
     'LogIn',
     'InfoRecovery',

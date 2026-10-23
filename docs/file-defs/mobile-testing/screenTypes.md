@@ -8,7 +8,7 @@
 
 ### `SCREEN_TYPES`
 
-Readonly tuple of the 10 screen-type names (PascalCase).
+Readonly tuple of the screen-type names (QuestMatching added for issue #8) (PascalCase).
 
 **Used in**
 

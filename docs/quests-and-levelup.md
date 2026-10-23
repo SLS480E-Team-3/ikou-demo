@@ -103,6 +103,7 @@ Planned in Issue #62 (boss rush through every quest type).
 
 - **Catch** (`questIsland.tsx`), **shoot** (`shootQuestIsland.tsx`), **dodge** (`dodgeQuestIsland.tsx`): blocks with the target kana.
 - **Particle** (`particleQuestIsland.tsx`): island 3. A sentence with a blank on the sign, catch the wood piece with the right particle. Spec: [island-3.spec.json](island-3.spec.json).
+- **Matching** (`matchingQuestIsland.tsx`, issue #8): こそあど on the dodge dojo. Ryuuko's bubble shows a word (これ), red / blue / green areas appear with English meanings, and when the 3 s timer runs out the player's feet must be in the right one (正解！ → next word; wrong → 違うわよ！ and the same word again). Prototype: これ only, `/MobDev/QuestMatching` only (not on the quest page).
 - **Left or Right** (`leftRightQuestIsland.tsx`): walk up a small room into the red or blue door in its back wall with the verb's meaning ([scene](scenes/hallway.md)). Spec: [left-or-right.spec.json](left-or-right.spec.json). MobileTester tab `quest door` only for now (not on the quest page / no SQL).
 
 ## Reward Points
