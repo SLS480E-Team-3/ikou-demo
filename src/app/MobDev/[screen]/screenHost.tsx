@@ -43,7 +43,7 @@ export default function ScreenHost({ screen }: { screen: ScreenType }) {
     const query = useSearchParams()
     const Screen = SCREENS[screen]
     return (
-        <div style={{ position: 'fixed', inset: 0, overflow: 'auto' }}> {/* wrapper: **width 100%, height 100lvh** -> **position fixed, inset 0**, reason: lvh is taller than what Safari shows, so the bottom of the scene (island buttons) sat under the floating URL bar, mechanism: a fixed box pinned to all 4 edges is exactly the visible viewport and resizes with the bars, no vh units; overflow auto lets a form taller than the screen scroll inside it */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '100lvh', overflow: 'auto' }}> {/* wrapper: **position fixed, inset 0** -> **absolute, 100lvh**, reason: iOS 26 Safari froze its status-bar / URL-bar colors on a fixed element touching the screen edges, mechanism: not fixed, so Safari tints the status bar from the live body background (GameScene tintEdges); 100lvh like /Game's IslandScene runs the scene under the glass URL bar so the bar shows the scene itself */} {/* wrapper: **width 100%, height 100lvh** -> **position fixed, inset 0**, reason: lvh is taller than what Safari shows, so the bottom of the scene (island buttons) sat under the floating URL bar, mechanism: a fixed box pinned to all 4 edges is exactly the visible viewport and resizes with the bars, no vh units; overflow auto lets a form taller than the screen scroll inside it */}
             <Screen
                 island={Math.trunc(toNum(query.get('island')) ?? 1)}
                 sensitivity={toNum(query.get('sens'))}

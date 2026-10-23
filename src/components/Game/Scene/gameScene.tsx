@@ -415,9 +415,6 @@ const NO_OBJECTS: PlacedObject[] = []
 
 export type SceneNPC = NPCProps // type: **{ ent, dialog?: string }** -> **NPCProps**, reason: NPCs talk in several lines now, mechanism: NPCProps is { ent, dialog?: Dialog[], quest? }, defined next to NPCRenderer that draws it
 const NO_NPCS: SceneNPC[] = []
-const EDGE_BAR_H = 4
-// css px height of the tintEdges bars: enough for Safari to treat them as
-// edge content, thin enough to sit on the scene's own edge row
 const STILL = { x: 0, y: 0 }
 // an entity standing in the scene with an optional speech bubble. NO_NPCS /
 // STILL are module-level so they're the same object every render; STILL is
@@ -449,7 +446,7 @@ export const groundColorAt = (bg: BGProps, y: number): string => {
 }
 // the ground color across world row y: the last full-width section that
 // covers it (later sections draw over earlier ones), else the world's base
-// color. Used to tint Safari's bars with what is at the screen's edges
+// color. Used to tint Safari's status bar with what is at the screen's top
 
 const setThemeColor = (color: string | null) => {
     let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"][data-scene]')
@@ -491,7 +488,7 @@ export const objectHitBoxes = (objects: PlacedObject[]): HitBox[] => objects.fla
 export type PlayerBox = { x: number, y: number, w: number, h: number }
 // the player's center + size handed to onTick, same shape overlaps() reads
 
-export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sensitivity = SENSITIVITY_DEF, objects = NO_OBJECTS, npcs = NO_NPCS, onQuest, onChoice, onTalkEnd, onTick, renderWorld, talkRequest, moveRequest, wallY, playerLabel, onShoot, feetH, tintEdges }: { bgProps?: BGProps, player?: PlayerProps, screenSize?: { w: number, h: number }, sensitivity?: number, objects?: PlacedObject[], npcs?: SceneNPC[], onQuest?: (npc: number) => void, onChoice?: (npc: number, choice: number) => void, onTalkEnd?: (npc: number) => void, onTick?: (dt: number, player: PlayerBox) => void, renderWorld?: () => ReactNode, talkRequest?: { npc: number, key: number }, moveRequest?: { x: number, y: number, key: number }, wallY?: number, playerLabel?: () => string | undefined, onShoot?: () => boolean, feetH?: number, tintEdges?: boolean }) { // props: **+ tintEdges?**, reason: Safari's status-bar and URL-bar strips kept the color they sampled at load while the camera moved, mechanism: see edge tint below // props: **no feetH** -> **feetH?**, reason: in the Left or Right room only the player's feet should hit the walls, mechanism: when set, the move checks use the bottom feetH px of the body instead of the whole body; unset = whole body, so every other scene is unchanged // // props: **no onShoot** -> **onShoot?**, reason: the shooting quest copy fires bullets with Space / a tap, mechanism: returns true when it fired; Space falls back to talking and taps to the stick / pinch when it returns false or is unset, so every other caller is unchanged // props: **no playerLabel** -> **playerLabel?**, reason: Quest Island shows current/quota over the player, mechanism: called every render (the scene force()-renders each frame) and its string replaces the name tag; undefined keeps the real name // props: **no onChoice / onTick / renderWorld / talkRequest** -> **optional hooks**, reason: the Quest Island runs a minigame on top of the scene, mechanism: onChoice gets every choice tap (npc index, choice index), onTick runs each frame after the player moves, renderWorld draws extra world-px children, talkRequest opens a talk with an NPC when its key changes; islands pass none, so they behave as before // props: **no onQuest** -> **onQuest?**, reason: NPCs offer the island's next quest, mechanism: called when the player picks choice 0 (はい); left out = no quest open, so NPCs skip their 'quest' entry // props: **moveInput?, zoomInput?** -> **sensitivity?**, reason: MobileGameScene merged into GameScene so edits happen in one place, mechanism: the joystick and pinch live here now and write to the scene's own stickRef / zoomTarget, so no caller passes refs in; sensitivity is the one knob MobileGameScene had on top // props: **no npcs** -> **npcs?**, reason: entities with dialog in the scene, mechanism: each is drawn with EntityRenderer at its bottom-edge zIndex like the player; optional so a bare <GameScene /> has none // props: **no objects** -> **objects?**, reason: an island draws its map, mechanism: a PlacedObject list (island_N.ts) resolved against the OBJECTS catalog below; optional so a bare <GameScene /> is an empty field // props: **no onTalkEnd** -> **onTalkEnd?**, reason: the Quest Island moves on after a talk without choices (Ryuuko's おつかれさま！), mechanism: endTalk calls it with the NPC index, before onChoice on a choice tap // props: **no wallY** -> **wallY?**, reason: during Quest Island training the player could stand next to Ryuuko and catch every block, mechanism: a world-px y the player's top edge can't go above, applied in the tick's y clamp; undefined = no wall
+export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sensitivity = SENSITIVITY_DEF, objects = NO_OBJECTS, npcs = NO_NPCS, onQuest, onChoice, onTalkEnd, onTick, renderWorld, talkRequest, moveRequest, wallY, playerLabel, onShoot, feetH, tintEdges }: { bgProps?: BGProps, player?: PlayerProps, screenSize?: { w: number, h: number }, sensitivity?: number, objects?: PlacedObject[], npcs?: SceneNPC[], onQuest?: (npc: number) => void, onChoice?: (npc: number, choice: number) => void, onTalkEnd?: (npc: number) => void, onTick?: (dt: number, player: PlayerBox) => void, renderWorld?: () => ReactNode, talkRequest?: { npc: number, key: number }, moveRequest?: { x: number, y: number, key: number }, wallY?: number, playerLabel?: () => string | undefined, onShoot?: () => boolean, feetH?: number, tintEdges?: boolean }) { // props: **+ tintEdges?**, reason: Safari's status-bar strip kept the color it sampled at load while the camera moved, mechanism: see edge tint below // props: **no feetH** -> **feetH?**, reason: in the Left or Right room only the player's feet should hit the walls, mechanism: when set, the move checks use the bottom feetH px of the body instead of the whole body; unset = whole body, so every other scene is unchanged // // props: **no onShoot** -> **onShoot?**, reason: the shooting quest copy fires bullets with Space / a tap, mechanism: returns true when it fired; Space falls back to talking and taps to the stick / pinch when it returns false or is unset, so every other caller is unchanged // props: **no playerLabel** -> **playerLabel?**, reason: Quest Island shows current/quota over the player, mechanism: called every render (the scene force()-renders each frame) and its string replaces the name tag; undefined keeps the real name // props: **no onChoice / onTick / renderWorld / talkRequest** -> **optional hooks**, reason: the Quest Island runs a minigame on top of the scene, mechanism: onChoice gets every choice tap (npc index, choice index), onTick runs each frame after the player moves, renderWorld draws extra world-px children, talkRequest opens a talk with an NPC when its key changes; islands pass none, so they behave as before // props: **no onQuest** -> **onQuest?**, reason: NPCs offer the island's next quest, mechanism: called when the player picks choice 0 (はい); left out = no quest open, so NPCs skip their 'quest' entry // props: **moveInput?, zoomInput?** -> **sensitivity?**, reason: MobileGameScene merged into GameScene so edits happen in one place, mechanism: the joystick and pinch live here now and write to the scene's own stickRef / zoomTarget, so no caller passes refs in; sensitivity is the one knob MobileGameScene had on top // props: **no npcs** -> **npcs?**, reason: entities with dialog in the scene, mechanism: each is drawn with EntityRenderer at its bottom-edge zIndex like the player; optional so a bare <GameScene /> has none // props: **no objects** -> **objects?**, reason: an island draws its map, mechanism: a PlacedObject list (island_N.ts) resolved against the OBJECTS catalog below; optional so a bare <GameScene /> is an empty field // props: **no onTalkEnd** -> **onTalkEnd?**, reason: the Quest Island moves on after a talk without choices (Ryuuko's おつかれさま！), mechanism: endTalk calls it with the NPC index, before onChoice on a choice tap // props: **no wallY** -> **wallY?**, reason: during Quest Island training the player could stand next to Ryuuko and catch every block, mechanism: a world-px y the player's top edge can't go above, applied in the tick's y clamp; undefined = no wall
     // props are optional (?) because they have defaults -- lets a page mount
     // a bare <GameScene /> while the db-backed bg/player aren't wired yet.
     // screenSize has no default and isn't read yet, so it's undefined for now
@@ -529,10 +526,8 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
     // the pinch started; null = not pinching
     const sceneRef = useRef<HTMLDivElement>(null)
     const sceneSizeRef = useRef<{ w: number, h: number }>({ w: 0, h: 0 })
-    const topEdgeRef = useRef<HTMLDivElement>(null)
-    const bottomEdgeRef = useRef<HTMLDivElement>(null)
-    const edgeColorsRef = useRef({ top: '', bottom: '' })
-    // the two fixed edge bars (tintEdges) and the colors last written to them
+    const edgeColorRef = useRef('')
+    // the top-edge color last written to the page (tintEdges)
     // on-screen size of the scene box in css px, measured below -- the
     // camera clamp needs it to know how much world is visible
     const placed = useMemo(() => objects.flatMap(obj => {
@@ -706,25 +701,22 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
 
             if (tintEdges) {
                 const top = groundColorAt(bg, view.y - halfH)
-                const bottom = groundColorAt(bg, view.y + halfH - 1)
-                const last = edgeColorsRef.current
-                if (top !== last.top || bottom !== last.bottom) {
-                    edgeColorsRef.current = { top, bottom }
-                    if (topEdgeRef.current) topEdgeRef.current.style.backgroundColor = top
-                    if (bottomEdgeRef.current) bottomEdgeRef.current.style.backgroundColor = bottom
+                if (top !== edgeColorRef.current) {
+                    edgeColorRef.current = top
                     document.documentElement.style.backgroundColor = top
-                    document.body.style.backgroundColor = bottom
+                    document.body.style.backgroundColor = top
                     setThemeColor(top)
                 }
             }
-            // edge tint: the ground color under the scene's top row and bottom
-            // row (view.y -/+ halfH, the camera clamp's visible half height).
-            // iOS 26 Safari colors its status-bar and URL-bar strips from fixed
-            // elements touching the screen's top and bottom edge, so the two
-            // edge bars carry those colors; html / body background and the
-            // theme-color meta cover older Safari and overscroll. Written to
-            // the DOM only when a color changes (a band border scrolls past
-            // an edge), not every frame, and without a React render
+            // edge tint: the ground color under the scene's top row (view.y -
+            // halfH, the camera clamp's visible half height) becomes the page
+            // background. iOS 26 Safari paints its status-bar strip with the
+            // body background and follows changes to it live, as long as no
+            // fixed element touches the screen edge (then it samples that
+            // element once and freezes, the bug this fixes). The URL bar at
+            // the bottom is glass over the scene itself, so it needs nothing.
+            // theme-color is for Safari 15-18. Written only when the color
+            // changes (a band border passes the top edge), without a render
 
             force(f => f + 1)
             frame = requestAnimationFrame(tick)
@@ -1088,14 +1080,6 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
             style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', touchAction: 'none' }} // scene div: **no pointer handlers, no touchAction** -> **pinch handlers + touchAction none**, reason: MobileGameScene's wrapper merged in, mechanism: the stick overlay is a child now, so its pointer events bubble here for the pinch, and touch-action none stops the browser's own pan/zoom on any touch starting in the scene
         >
             {/* sceneRef: the box whose size the camera clamp measures */}
-            {tintEdges && <>
-                <div ref={topEdgeRef} style={{ position: 'fixed', top: 0, left: 0, right: 0, height: EDGE_BAR_H, zIndex: 1, pointerEvents: 'none' }} />
-                <div ref={bottomEdgeRef} style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: EDGE_BAR_H, zIndex: 1, pointerEvents: 'none' }} />
-            </>}
-            {/* edge bars (tintEdges): full-width fixed strips on the screen's
-                top and bottom edge, colored by the tick with the ground at
-                those edges. They match the scene row next to them, so they
-                don't show as lines; Safari samples them for its bars */}
             <div
                 style={{
                     position: 'absolute',
