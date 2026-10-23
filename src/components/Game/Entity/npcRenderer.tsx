@@ -1,0 +1,114 @@
+'use client'
+
+import { QuestsProps } from "@/utils/schema"
+import EntityRenderer, { EntityProps } from "./entityRenderer"
+import DialogBubble, { Dialog } from "./dialogBubble"
+import { lineUrl } from "./voice" // import: **NPCVoice from speech** -> **dialogUrl from voice**, reason: speechSynthesis removed
+
+export type NPCProps = {
+    voice?: string, // voice: **NPCVoice (speech voice)** -> **voice?: string (mp3 folder)**, reason: lines play recorded mp3s, mechanism: the folder under public/dialog/ (e.g. 'Aoi'); left out = the NPC is silent
+    ent: EntityProps, // shape: **EntityProps & {...}** -> **{ ent, ... }**, reason: GameScene already keeps NPCs as { ent, dialog }, mechanism: the entity box stays one object, so the scene's solids / range checks read n.ent like the player's
+    dialog?: Dialog[], // greeting, greetingEn, dialog, dialogEn: **four separate fields** -> **dialog: Dialog[]**, reason: an NPC says different things by condition (first talk, after talking, quest cleared), mechanism: each entry is tagged with its condition and carries its jp lines + en; pickDialog below chooses one
+    quest?: { id: number, title: string, status?: 'done' | 'resume' }
+    kana?: string // kana: **none** -> **kana?**, reason: each island-1 NPC trains one vowel, mechanism: IslandScene gives it the quest row with the same kana; MobileTester opens the training on it directly
+}
+// selected: **in NPCProps** -> **NPCRenderer prop**, reason: which NPC is
+// talking is scene state, not NPC data, mechanism: GameScene passes
+// selected / line per NPC each frame, so the NPC list stays static
+
+export const GREETING_DEF: Dialog = { condition: 'greeting', jp: 'こんにちは', en: 'Hello' } // GREETING_DEF: **'こんにちは'** -> **a greeting Dialog**, mechanism: carries its English, used when an NPC has no 'greeting' entry
+
+const toList = (s: string | string[]) => typeof s === 'string' ? [s] : s
+
+const find = (npc: NPCProps, condition: Dialog['condition']) => npc.dialog?.find(d => d.condition === condition && toList(d.jp).length > 0)
+export const greeting = (npc: NPCProps) => find(npc, 'greeting') ?? GREETING_DEF
+// the entry shown above an NPC while the player is in range
+
+export const pickDialog = (npc: NPCProps, spoken: boolean, questOpen = false): Dialog => // args: **(npc, spoken)** -> **+ questOpen**, reason: NPCs offer the island's next quest, mechanism: GameScene passes true while it has an onQuest to open
+    (npc.quest?.status === 'done' ? find(npc, 'questCleared') : undefined) ??
+    (questOpen && npc.quest?.status !== 'done' ? find(npc, 'quest') : undefined) ?? // offer: **while any quest is open** -> **+ not this NPC's cleared quest**, mechanism: a cleared kana's NPC falls through to its normal talk instead of offering it again // step: **none** -> **quest offer**, mechanism: wins over spoken/default so every talk offers it; skipped (normal talk) when no quest is open
+    (spoken ? find(npc, 'spoken') : undefined) ??
+    find(npc, 'default') ??
+    greeting(npc)
+// the entry a talk plays, most specific condition first: quest cleared,
+// then already spoken to (this scene), then default. An NPC with none of
+// those repeats its greeting, so tapping it still zooms in and back out
+
+export const talkLines = (npc: NPCProps, spoken: boolean, questOpen = false) => { // args: **+ questOpen**, mechanism: passed to pickDialog so the scene steps through the entry the bubble shows
+    const d = pickDialog(npc, spoken, questOpen)
+    const en = toList(d.en)
+    const audio = toList(d.audio ?? [])
+    return toList(d.jp).map((jp, i) => ({ jp, en: en[i] ?? '', audio: audio[i] })) // lines: **{ jp, en }** -> **+ audio**, mechanism: the line's mp3 file name, index-aligned like en
+}
+// the lines a talk steps through, one per tap, each paired with its English
+// (index-aligned; a missing one is '' = no English line)
+
+export const NPC_TAP_ATTR = 'data-npc'
+// GameScene's stick overlay sits above the whole world, so taps never reach
+// the NPC itself; the overlay hit-tests the elements carrying this attribute
+// (value = the NPC's index) with getBoundingClientRect instead
+
+export default function NPCRenderer({ npc, index, velocity, inRange, selected = false, spoken = false, questOpen = false, line }: { // props: **+ questOpen**, mechanism: same pickDialog input GameScene uses // props: **+ spoken**, mechanism: GameScene knows who was talked to; passed so the bubble shows the same entry the scene steps through
+    npc: NPCProps,
+    index: number,
+    velocity: { x: number, y: number },
+    inRange: boolean,
+    selected?: boolean,
+    spoken?: boolean,
+    questOpen?: boolean,
+    line?: number,
+}) {
+    const ent = npc.ent
+    const lines = talkLines(npc, spoken, questOpen) // talkLines: **(npc, spoken)** -> **+ questOpen**
+    const picked = pickDialog(npc, spoken, questOpen)
+    const cur = line === undefined ? undefined : lines[line]
+    const dialogs: Dialog[] | undefined = selected ? (cur && [{ condition: picked.condition, jp: cur.jp, en: cur.en }]) : inRange ? [greeting(npc)] : undefined
+    const choices = selected && line === lines.length - 1 ? picked.choices : undefined
+    // choices: the picked entry's answer buttons, only on its last line
+    // dialogs: **text + en** -> **Dialog[]**, mechanism: talking = just the
+    // current line of the picked entry (one line per tap); in range = the
+    // whole greeting entry; otherwise no bubble
+    const file = selected ? cur?.audio : inRange ? toList(greeting(npc).audio ?? [])[0] : undefined
+    const audio = npc.voice && file ? lineUrl(npc.voice, file) : undefined // url: **dialogUrl** -> **lineUrl**, mechanism: a file made of several clips ('a|b') becomes their urls joined by '\n', which playLine plays in a row; a plain file gives the same url as before
+    // the clip for what the bubble shows: the current talk line, or the
+    // greeting's (first) recording while in range. Silent when the NPC has no
+    // voice folder or the line has no file
+    const tap = inRange || selected ? { [NPC_TAP_ATTR]: index } : undefined
+
+    return (
+        <>
+            <EntityRenderer velocity={velocity} ent={ent} />
+            {tap && (
+                <div
+                    {...tap}
+                    style={{
+                        position: 'absolute',
+                        left: ent.x,
+                        top: ent.y,
+                        width: ent.w,
+                        height: ent.h,
+                        transform: 'translate(-50%, -50%)',
+                        pointerEvents: 'none',
+                    }}
+                />
+            )}
+            {dialogs && <DialogBubble x={ent.x} y={ent.y} h={ent.h} dialogs={dialogs} tapId={tap && index} audio={audio} choices={choices} />} {/* speak: **npc.voice while selected** -> **audio URL**, reason: mp3s replace speechSynthesis and the greeting plays too, mechanism: see audio above */} {/* dialogs: **one wrapped default line** -> **the entry picked above**, mechanism: see dialogs */}
+        </>
+    )
+}
+// bubble: near the player it shows the greeting; once selected it shows
+// talk line `line`, and nothing while line is undefined (GameScene leaves it
+// undefined until the zoom-in has settled). One line at a time, so
+// DialogBubble's text changes on each tap and it retypes from the start
+// tap targets: an invisible box over the body plus the bubble, both tagged
+// NPC_TAP_ATTR, so the NPC or its bubble can be tapped. Only while in range
+// or talking, so a far NPC can't be picked
+// the bubble is drawn here instead of through EntityRenderer's dialog prop so
+// it can carry the tap attribute
+
+// npcs can be clicked or touched when their dialog bubble is on
+// when selected zooms into npc
+// after zoomed in if they have dialog starts talking
+// say dialog = ['おい','頼みがあるんだが','聞いてくれるか？']
+// for each line by tapping the dialog, cleared and next line starts to show
+// after the last index, tapping the dialog, brings you back to the original zoom

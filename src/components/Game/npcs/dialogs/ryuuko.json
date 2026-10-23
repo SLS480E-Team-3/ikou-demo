@@ -1,0 +1,187 @@
+{
+  "npc": "ryuuko",
+  "name": "Ryuuko",
+  "color": "crimson",
+  "dialog": [
+    {
+      "condition": "quest",
+      "choices": [
+        ["はい", "Yes"],
+        ["いいえ", "No"]
+      ],
+      "lines": [
+        {
+          "kana": "こんかいのおだいは「{target}」よ！",
+          "text": "今回のお題は{target}",
+          "en": "This time's target is \"{target}\"!",
+          "style": "confident trainer, announcing the target, the voice stays up at the end because a word follows"
+        },
+        {
+          "kana": "じゅんびはできてる？",
+          "text": "準備はできてる？",
+          "en": "Ready?",
+          "style": "confident trainer, a teasing challenge before the drill starts"
+        },
+        {
+          "kana": "いくわよ！",
+          "text": "いくわよ！",
+          "en": "Here I go!",
+          "style": "energetic and sure of herself, kicking off the drill"
+        }
+      ]
+    },
+    {
+      "condition": ["level1-start", "level2-start"],
+      "lines": [
+        {
+          "kana": "いくわよ！",
+          "text": "いくわよ！",
+          "en": "Here I go!",
+          "style": "energetic and sure of herself, kicking off the drill"
+        }
+      ]
+    },
+    {
+      "condition": "level1-clear",
+      "choices": [
+        ["はい", "Yes"],
+        ["いいえ", "No"]
+      ],
+      "lines": [
+        {
+          "kana": "よゆうそうね。",
+          "text": "余裕そうね。",
+          "en": "Looks easy for you.",
+          "style": "amused and teasing, a little impressed but not showing it"
+        },
+        {
+          "kana": "ちょっとはやくするわよ",
+          "text": "ちょっと早くするわよ",
+          "en": "Let me speed it up",
+          "style": "playful smirk, raising the pace as a challenge"
+        }
+      ]
+    },
+    {
+      "condition": "level2-clear",
+      "lines": [
+        {
+          "kana": "おつかれさま！",
+          "text": "お疲れ様！",
+          "en": "Good job!",
+          "style": "warm and satisfied, praising the player after the drill"
+        }
+      ]
+    },
+    {
+      "condition": ["level1-fail", "level2-fail"],
+      "choices": [
+        ["はい", "Yes"],
+        ["いいえ", "No"]
+      ],
+      "lines": [
+        {
+          "kana": "まだまだいけるでしょ？",
+          "text": "まだまだいけるでしょ？",
+          "en": "You can keep going, right?",
+          "style": "teasing but encouraging, pushing the player to try again"
+        }
+      ]
+    },
+    {
+      "condition": "retry",
+      "choices": [
+        ["レベル1", "Level 1"],
+        ["レベル2", "Level 2"]
+      ],
+      "lines": [
+        {
+          "kana": "どこからはじめる？",
+          "text": "どこから始める？",
+          "en": "Where are we starting?",
+          "style": "calm and inviting, letting the player pick a level"
+        }
+      ]
+    },
+    {
+      "condition": "lr-intro",
+      "choices": [
+        ["はい", "Yes"],
+        ["いいえ", "No"]
+      ],
+      "lines": [
+        {
+          "kana": "ただしいドアをとおって！",
+          "text": "正しいドアを通って！",
+          "en": "Go through the right door!",
+          "style": "confident trainer, explaining the rule with a challenge in her voice"
+        },
+        {
+          "kana": "じゅんびはできてる？",
+          "text": "準備はできてる？",
+          "en": "Ready?",
+          "style": "confident trainer, a teasing challenge before the drill starts"
+        }
+      ]
+    },
+    {
+      "condition": "lr-word",
+      "lines": [
+        {
+          "kana": "「{target}」はどういういみ？",
+          "text": "{target}はどういう意味？",
+          "en": "What does \"{target}\" mean?",
+          "style": "confident trainer, quizzing the player, a word comes right before this so start mid-sentence; the first は is the topic particle, read it as wa"
+        }
+      ]
+    },
+    {
+      "condition": "lr-correct",
+      "lines": [
+        {
+          "kana": "いいね！",
+          "text": "いいね！",
+          "en": "Nice!",
+          "style": "quick and pleased, a short bright praise"
+        }
+      ]
+    },
+    {
+      "condition": "lr-wrong",
+      "lines": [
+        {
+          "kana": "ちがうわよ！",
+          "text": "違うわよ！",
+          "en": "Wrong!",
+          "style": "quick teasing correction, not harsh"
+        }
+      ]
+    },
+    {
+      "condition": "lr-clear",
+      "lines": [
+        {
+          "kana": "おつかれさま！",
+          "text": "お疲れ様！",
+          "en": "Good job!",
+          "style": "warm and satisfied, praising the player after the drill"
+        }
+      ]
+    },
+    {
+      "condition": "lr-fail",
+      "choices": [
+        ["はい", "Yes"],
+        ["いいえ", "No"]
+      ],
+      "lines": [
+        {
+          "kana": "まだまだいけるでしょ？",
+          "text": "まだまだいけるでしょ？",
+          "en": "You can keep going, right?",
+          "style": "teasing but encouraging, pushing the player to try again"
+        }
+      ]
+    }
+  ]
+}

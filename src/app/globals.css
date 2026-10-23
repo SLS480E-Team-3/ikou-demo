@@ -1,0 +1,61 @@
+/* Per-device width vars (--iphone-17-width, --iphone-16-pro-width,
+   --iphone-se-2nd-gen-width, --galaxy-s26-width, --pixel-10-pro-width, etc.)
+   are NOT declared here -- they're set as an inline style on <html> in
+   layout.tsx, sourced from mobileScreenSIze.ts, so that file stays the single
+   source of truth for device sizes. They still resolve via var() anywhere
+   below through normal CSS inheritance from :root.
+
+   The Android BREAKPOINT_* constants in mobileScreenSIze.ts are plain
+   numbers, not vars -- @media conditions can't read var(), so any rule using
+   them (e.g. @media (min-width: 412px)) has to spell the number out. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+@font-face {
+  font-family: "EnglishPixel";
+  src: url("/fonts/EnglishPixelFont.ttf") format("truetype");
+  font-display: swap;
+  /* its capitals are 7/8 em tall, JapanesePF's are 11/16 em (drawn to sit beside
+     its kana), so scale by 11/14 to make mixed English/Japanese text match */
+  size-adjust: 78.57%;
+}
+
+@font-face {
+  font-family: "JapanesePF";
+  src: url("/fonts/JapanesePF.ttf") format("truetype");
+  font-display: swap;
+  /* CJK punctuation, hiragana, katakana, kanji, full-width forms */
+  unicode-range: U+3000-30FF, U+4E00-9FFF, U+FF00-FFEF;
+}
+/* unicode-range: the 3MB file is only downloaded once Japanese text is on the
+   page, and English letters never come from it even though it has them. */
+
+html,
+body {
+  /* EnglishPixel first for Latin; JapanesePF picks up kana/kanji that
+     EnglishPixel lacks (per its unicode-range) */
+  font-family: "EnglishPixel", "JapanesePF", sans-serif;
+  font-size: large;
+}
+
+body {
+  margin: 0;
+}
+/* There is no CSS reset in this project, so body kept the UA default 8px
+   margin. Any full-height screen (objectMaker is height: 100vh) then measured
+   100vh + 16px and scrolled the page by exactly that margin, whatever its
+   contents did. Zeroing it here rather than per-screen: every route that wants
+   to fill the viewport hits the same wall otherwise. */
+
+   
+html,
+body {
+  height: 100%;
+}
+/* Gives body a definite height, so a page root with min-height: 100% (the
+   auth pages) fills the whole screen and can center its content vertically.
+   Taller pages still grow past it and scroll as before. */
