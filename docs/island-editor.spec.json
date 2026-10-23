@@ -46,7 +46,7 @@
     },
     {
       "term": "asset box",
-      "meaning": "The editor's palette of placeable things, grouped in folder dropdowns: npcs/ and objects/."
+      "meaning": "The editor's palette of placeable things, grouped in folder dropdowns: npcs/, tiles/ (the tile path, GitHub issue #6) and objects/."
     },
     {
       "term": "level (quest)",

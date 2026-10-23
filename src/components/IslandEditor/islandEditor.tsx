@@ -113,6 +113,10 @@ export default function IslandEditor() {
                 sprites: up && !f.sprites.some(s => s.key === up.key) ? [...f.sprites, up] : f.sprites,
             }))
             setSelection({ kind: 'object', id })
+        } else if (t.kind === 'tile') {
+            const id = nextId('tile', (file.tiles ?? []).map(x => x.id))
+            h.commit(f => ({ ...f, tiles: [...(f.tiles ?? []), { id, x, y }] }))
+            setSelection({ kind: 'tile', id })
         } else {
             const id = nextId(t.npc, file.npcs.map(n => n.id))
             h.commit(f => ({ ...f, npcs: [...f.npcs, { id, npc: t.npc, x, y: Math.round(y - ENT_H / 2) }] }))
@@ -120,14 +124,17 @@ export default function IslandEditor() {
         }
     }
     // a drop puts the asset's base (bottom-center) on the clicked point and
-    // selects it. An uploaded sprite is copied into the file's sprites, so
+    // selects it; a tile's center goes on the point and it joins the end of
+    // the path. An uploaded sprite is copied into the file's sprites, so
     // the game can draw it without the upload index
 
     const remove = useCallback(() => {
         if (!selection) return
         h.commit(f => selection.kind === 'object'
             ? { ...f, objects: f.objects.filter(o => o.id !== selection.id) }
-            : { ...f, npcs: f.npcs.filter(n => n.id !== selection.id) })
+            : selection.kind === 'npc'
+            ? { ...f, npcs: f.npcs.filter(n => n.id !== selection.id) }
+            : { ...f, tiles: (f.tiles ?? []).filter(t => t.id !== selection.id) }) // remove: **object or npc** -> **+ tile**, mechanism: the tiles after it move up one place in the path
         setSelection(null)
     }, [selection, h])
 
@@ -139,6 +146,12 @@ export default function IslandEditor() {
             const id = nextId(o.def, file.objects.map(x => x.id))
             h.commit(f => ({ ...f, objects: [...f.objects, { ...o, id, x: o.x + 40, y: o.y + 40 }] }))
             setSelection({ kind: 'object', id })
+        } else if (selection.kind === 'tile') {
+            const t = file.tiles?.find(x => x.id === selection.id)
+            if (!t) return
+            const id = nextId('tile', (file.tiles ?? []).map(x => x.id))
+            h.commit(f => ({ ...f, tiles: [...(f.tiles ?? []), { id, x: t.x + 40, y: t.y + 40 }] }))
+            setSelection({ kind: 'tile', id })
         } else {
             const n = file.npcs.find(x => x.id === selection.id)
             if (!n) return
@@ -147,7 +160,8 @@ export default function IslandEditor() {
             setSelection({ kind: 'npc', id })
         }
     }, [selection, file, h])
-    // the copy lands 40 px right and down of the original, selected
+    // the copy lands 40 px right and down of the original, selected. A
+    // copied tile goes to the end of the path, with no quest
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -168,7 +182,7 @@ export default function IslandEditor() {
     // the tool and selection. Ignored while typing in a field, so ⌫ edits text
 
     useEffect(() => {
-        if (selection && !(selection.kind === 'object' ? file.objects : file.npcs).some(x => x.id === selection.id)) setSelection(null)
+        if (selection && !(selection.kind === 'object' ? file.objects : selection.kind === 'npc' ? file.npcs : file.tiles ?? []).some(x => x.id === selection.id)) setSelection(null) // list: **objects or npcs** -> **+ tiles**
     }, [file, selection])
     // an undo can remove the selected item; clear the selection then
 

@@ -7,12 +7,14 @@ import { ENT_H, ENT_W } from "@/components/Game/Entity/entityRenderer"
 import { OBJECTS } from "@/components/Game/Object/objects"
 import { NPC_SCRIPTS } from "@/components/Game/npcs/npcs"
 import { toBgSections, type IslandFile } from "@/components/Game/islands/islandFile"
+import { TILE_H, TILE_W, TilePath } from "@/components/Game/islands/tiles"
 
-export type Selection = { kind: 'object' | 'npc', id: string } | null
-export type Tool = { kind: 'object', def: string } | { kind: 'npc', npc: string } | null
+export type ItemKind = 'object' | 'npc' | 'tile'
+export type Selection = { kind: ItemKind, id: string } | null // kind: **'object' | 'npc'** -> **ItemKind (+ 'tile')**, mechanism: tiles are selected, moved and deleted like NPCs
+export type Tool = { kind: 'object', def: string } | { kind: 'npc', npc: string } | { kind: 'tile' } | null // tool: **+ { kind: 'tile' }**, mechanism: the asset box's tiles/ entry drops a tile
 
 type Drag = { moved: boolean } & (
-    | { mode: 'move', kind: 'object' | 'npc', id: string, dx: number, dy: number }
+    | { mode: 'move', kind: ItemKind, id: string, dx: number, dy: number }
     | { mode: 'scale', id: string, cx: number, bottom: number }
 ) // drag: **+ moved**, mechanism: the undo step opens on the first move, so a plain click adds none
 
@@ -55,7 +57,7 @@ export default function EditorCanvas({ file, zoom, selection, tool, onSelect, on
     }
     // empty ground: drop the picked asset there, or clear the selection
 
-    const startMove = (e: ReactPointerEvent, kind: 'object' | 'npc', id: string, ox: number, oy: number) => {
+    const startMove = (e: ReactPointerEvent, kind: ItemKind, id: string, ox: number, oy: number) => {
         if (e.button !== 0) return
         e.stopPropagation()
         const p = toWorld(e)
@@ -86,7 +88,9 @@ export default function EditorCanvas({ file, zoom, selection, tool, onSelect, on
             const x = Math.round(p.x - d.dx), y = Math.round(p.y - d.dy) // x, y: **p - d** -> **rounded**, mechanism: the code's maps have fractional spots (place() halves sprite sizes); a moved item lands on whole px
             live(f => d.kind === 'object'
                 ? { ...f, objects: f.objects.map(o => o.id === d.id ? { ...o, x, y } : o) }
-                : { ...f, npcs: f.npcs.map(n => n.id === d.id ? { ...n, x, y } : n) })
+                : d.kind === 'npc'
+                ? { ...f, npcs: f.npcs.map(n => n.id === d.id ? { ...n, x, y } : n) }
+                : { ...f, tiles: (f.tiles ?? []).map(t => t.id === d.id ? { ...t, x, y } : t) }) // move: **object or npc** -> **+ tile**, mechanism: a tile's x / y is its center, moved the same way as an NPC's
         } else {
             live(f => ({
                 ...f, objects: f.objects.map(o => {
@@ -121,6 +125,24 @@ export default function EditorCanvas({ file, zoom, selection, tool, onSelect, on
                 {/* ground bands as flat colors, each from its separator down to
                     its end; the dashed line is the separator (the game draws a
                     dithered border there) */}
+
+                <TilePath tiles={file.tiles ?? []} cleared={[]} />
+                {(file.tiles ?? []).map((t, i) => {
+                    const sel = selection?.kind === 'tile' && selection.id === t.id
+                    return (
+                        <div key={t.id} onPointerDown={e => startMove(e, 'tile', t.id, t.x, t.y)}
+                            style={{ position: 'absolute', left: t.x - TILE_W / 2, top: t.y - TILE_H / 2, width: TILE_W, height: TILE_H, zIndex: sel ? SELECTED_Z : SELECTED_Z - 1, outline: sel ? `${2 / zoom}px solid #ff3d7f` : undefined, cursor: 'move' }}>
+                            <span style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', fontSize: 11 / zoom, whiteSpace: 'nowrap', background: 'rgba(255,255,255,0.85)', padding: `0 ${3 / zoom}px`, pointerEvents: 'none' }}>
+                                {i + 1}{t.questId ? ` · Q${t.questId}` : ''}
+                            </span>
+                        </div>
+                    )
+                })}
+                {/* tiles: the game's TilePath drawn as all uncleared (dashed
+                    path), with a grab box over each tile and its path number
+                    (1 = the first tile) and quest id under it. The grab boxes sit
+                    above every object (SELECTED_Z - 1), so a tile under a tree
+                    can still be picked */}
 
                 {file.objects.map(o => {
                     const def = OBJECTS[o.def]

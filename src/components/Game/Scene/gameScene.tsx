@@ -532,7 +532,23 @@ export const objectHitBoxes = (objects: PlacedObject[]): HitBox[] => objects.fla
 export type PlayerBox = { x: number, y: number, w: number, h: number }
 // the player's center + size handed to onTick, same shape overlaps() reads
 
-export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sensitivity = SENSITIVITY_DEF, objects = NO_OBJECTS, npcs = NO_NPCS, onQuest, onChoice, onTalkEnd, onTick, renderWorld, talkRequest, moveRequest, wallY, playerLabel, onShoot, feetH, tintEdges }: { bgProps?: BGProps, player?: PlayerProps, screenSize?: { w: number, h: number }, sensitivity?: number, objects?: PlacedObject[], npcs?: SceneNPC[], onQuest?: (npc: number) => void, onChoice?: (npc: number, choice: number) => void, onTalkEnd?: (npc: number) => void, onTick?: (dt: number, player: PlayerBox) => void, renderWorld?: () => ReactNode, talkRequest?: { npc: number, key: number }, moveRequest?: { x: number, y: number, key: number }, wallY?: number, playerLabel?: () => string | undefined, onShoot?: () => boolean, feetH?: number, tintEdges?: boolean }) { // props: **+ tintEdges?**, reason: Safari's status-bar strip kept the color it sampled at load while the camera moved, mechanism: see edge tint below // props: **no feetH** -> **feetH?**, reason: in the Left or Right room only the player's feet should hit the walls, mechanism: when set, the move checks use the bottom feetH px of the body instead of the whole body; unset = whole body, so every other scene is unchanged // // props: **no onShoot** -> **onShoot?**, reason: the shooting quest copy fires bullets with Space / a tap, mechanism: returns true when it fired; Space falls back to talking and taps to the stick / pinch when it returns false or is unset, so every other caller is unchanged // props: **no playerLabel** -> **playerLabel?**, reason: Quest Island shows current/quota over the player, mechanism: called every render (the scene force()-renders each frame) and its string replaces the name tag; undefined keeps the real name // props: **no onChoice / onTick / renderWorld / talkRequest** -> **optional hooks**, reason: the Quest Island runs a minigame on top of the scene, mechanism: onChoice gets every choice tap (npc index, choice index), onTick runs each frame after the player moves, renderWorld draws extra world-px children, talkRequest opens a talk with an NPC when its key changes; islands pass none, so they behave as before // props: **no onQuest** -> **onQuest?**, reason: NPCs offer the island's next quest, mechanism: called when the player picks choice 0 (はい); left out = no quest open, so NPCs skip their 'quest' entry // props: **moveInput?, zoomInput?** -> **sensitivity?**, reason: MobileGameScene merged into GameScene so edits happen in one place, mechanism: the joystick and pinch live here now and write to the scene's own stickRef / zoomTarget, so no caller passes refs in; sensitivity is the one knob MobileGameScene had on top // props: **no npcs** -> **npcs?**, reason: entities with dialog in the scene, mechanism: each is drawn with EntityRenderer at its bottom-edge zIndex like the player; optional so a bare <GameScene /> has none // props: **no objects** -> **objects?**, reason: an island draws its map, mechanism: a PlacedObject list (island_N.ts) resolved against the OBJECTS catalog below; optional so a bare <GameScene /> is an empty field // props: **no onTalkEnd** -> **onTalkEnd?**, reason: the Quest Island moves on after a talk without choices (Ryuuko's おつかれさま！), mechanism: endTalk calls it with the NPC index, before onChoice on a choice tap // props: **no wallY** -> **wallY?**, reason: during Quest Island training the player could stand next to Ryuuko and catch every block, mechanism: a world-px y the player's top edge can't go above, applied in the tick's y clamp; undefined = no wall
+export type SceneTap = { x: number, y: number, choice: number | null }
+// a tap in onTap mode: x / y in world px, choice = the dialog choice button
+// under the finger (CHOICE_TAP_ATTR), else null
+
+export type WalkPath = { points: { x: number, y: number }[], key: number }
+// a walk the parent orders in onTap mode: player centers in world px, walked
+// in turn; keyed so the same path can be ordered again
+
+const WALK_SPEED = PLAYER_SPEED * SPRINT
+// world px / second along a WalkPath, the sprint speed
+// tap mode: **none** -> **onTap / walkPath / onArrive**, reason: the island
+// scene moves tile to tile (GitHub issue #6), mechanism: with onTap the stick
+// and keys never move the player; a tap reports its world spot, and the tick
+// walks a WalkPath straight through its points (solids ignored), then calls
+// onArrive
+
+export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sensitivity = SENSITIVITY_DEF, objects = NO_OBJECTS, npcs = NO_NPCS, onQuest, onChoice, onTalkEnd, onTick, renderWorld, talkRequest, moveRequest, wallY, playerLabel, onShoot, feetH, tintEdges, onTap, walkPath, onArrive }: { onTap?: (tap: SceneTap) => void, walkPath?: WalkPath, onArrive?: () => void, bgProps?: BGProps, player?: PlayerProps, screenSize?: { w: number, h: number }, sensitivity?: number, objects?: PlacedObject[], npcs?: SceneNPC[], onQuest?: (npc: number) => void, onChoice?: (npc: number, choice: number) => void, onTalkEnd?: (npc: number) => void, onTick?: (dt: number, player: PlayerBox) => void, renderWorld?: () => ReactNode, talkRequest?: { npc: number, key: number }, moveRequest?: { x: number, y: number, key: number }, wallY?: number, playerLabel?: () => string | undefined, onShoot?: () => boolean, feetH?: number, tintEdges?: boolean }) { // props: **+ tintEdges?**, reason: Safari's status-bar strip kept the color it sampled at load while the camera moved, mechanism: see edge tint below // props: **no feetH** -> **feetH?**, reason: in the Left or Right room only the player's feet should hit the walls, mechanism: when set, the move checks use the bottom feetH px of the body instead of the whole body; unset = whole body, so every other scene is unchanged // // props: **no onShoot** -> **onShoot?**, reason: the shooting quest copy fires bullets with Space / a tap, mechanism: returns true when it fired; Space falls back to talking and taps to the stick / pinch when it returns false or is unset, so every other caller is unchanged // props: **no playerLabel** -> **playerLabel?**, reason: Quest Island shows current/quota over the player, mechanism: called every render (the scene force()-renders each frame) and its string replaces the name tag; undefined keeps the real name // props: **no onChoice / onTick / renderWorld / talkRequest** -> **optional hooks**, reason: the Quest Island runs a minigame on top of the scene, mechanism: onChoice gets every choice tap (npc index, choice index), onTick runs each frame after the player moves, renderWorld draws extra world-px children, talkRequest opens a talk with an NPC when its key changes; islands pass none, so they behave as before // props: **no onQuest** -> **onQuest?**, reason: NPCs offer the island's next quest, mechanism: called when the player picks choice 0 (はい); left out = no quest open, so NPCs skip their 'quest' entry // props: **moveInput?, zoomInput?** -> **sensitivity?**, reason: MobileGameScene merged into GameScene so edits happen in one place, mechanism: the joystick and pinch live here now and write to the scene's own stickRef / zoomTarget, so no caller passes refs in; sensitivity is the one knob MobileGameScene had on top // props: **no npcs** -> **npcs?**, reason: entities with dialog in the scene, mechanism: each is drawn with EntityRenderer at its bottom-edge zIndex like the player; optional so a bare <GameScene /> has none // props: **no objects** -> **objects?**, reason: an island draws its map, mechanism: a PlacedObject list (island_N.ts) resolved against the OBJECTS catalog below; optional so a bare <GameScene /> is an empty field // props: **no onTalkEnd** -> **onTalkEnd?**, reason: the Quest Island moves on after a talk without choices (Ryuuko's おつかれさま！), mechanism: endTalk calls it with the NPC index, before onChoice on a choice tap // props: **no wallY** -> **wallY?**, reason: during Quest Island training the player could stand next to Ryuuko and catch every block, mechanism: a world-px y the player's top edge can't go above, applied in the tick's y clamp; undefined = no wall
     // props are optional (?) because they have defaults -- lets a page mount
     // a bare <GameScene /> while the db-backed bg/player aren't wired yet.
     // screenSize has no default and isn't read yet, so it's undefined for now
@@ -664,6 +680,12 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
                 vel.y = 0
                 zoomTarget.current = TALK_ZOOM
             }
+            const walk = walkRef.current
+            if (onTapRef.current && !walk) {
+                vel.x = 0
+                vel.y = 0
+            }
+            // tap mode: the player stands still unless a WalkPath is being walked
             // talking freezes the player: vel 0 ignores both the stick and the
             // keys (and stops the lean/gust), and the zoom target is pinned
             // to TALK_ZOOM each frame so a wheel/pinch can't pull it away
@@ -689,6 +711,32 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
                 const feet = feetHRef.current
                 const hits = (cx: number, cy: number, s: HitBox) => feet ? overlaps(cx, cy + (ent.h - feet) / 2, ent.w, feet, s) : overlaps(cx, cy, ent.w, ent.h, s)
                 // hits: **overlaps(whole body)** -> **the body, or only its bottom feet px**, mechanism: with feetH the box is ent.w x feet, centered (ent.h - feet) / 2 below the body's center, so its bottom edge is the feet; the body above can overlap a wall
+                if (walk) {
+                    const p = walk.points[walk.i]
+                    const dist = Math.hypot(p.x - x, p.y - y)
+                    if (dist <= WALK_SPEED * dt) {
+                        ent.x = p.x
+                        ent.y = p.y
+                        walk.i++
+                        if (walk.i >= walk.points.length) {
+                            walkRef.current = null
+                            vel.x = 0
+                            vel.y = 0
+                            onArriveRef.current?.()
+                        }
+                    } else {
+                        vel.x = (p.x - x) / dist * WALK_SPEED
+                        vel.y = (p.y - y) / dist * WALK_SPEED
+                        ent.x = x + vel.x * dt
+                        ent.y = y + vel.y * dt
+                    }
+                }
+                // walking a WalkPath: straight at the next point at WALK_SPEED,
+                // snapping onto it when this frame's step reaches it, so no
+                // point is overshot. vel is set too, so the lean and the
+                // footprints follow the walk. Solids and the wave don't apply:
+                // the path is the way, like a map in Mario
+                else {
                 const nx = Math.min(Math.max(x + vel.x * dt, ent.w / 2), bg.w - ent.w / 2)
                 if (!solids.some(s => hits(nx, y, s) && !hits(x, y, s))) ent.x = nx // move: **always** -> **only if the new x hits no hitBox**, mechanism: a blocked step is dropped, so the player stops at the object's edge // block: **any hitBox at the new x** -> **only one the player isn't already inside**, reason: Quest Island NPCs appear mid-game and can spawn on top of the player, mechanism: a box already overlapping doesn't block, so the player can walk out of it instead of freezing
                 const ny = Math.min(Math.max(y + vel.y * dt, (wallYRef.current ?? 0) + ent.h / 2), bg.h - ent.h / 2) // top: **ent.h / 2** -> **wallY + ent.h / 2**, mechanism: with a wall the lowest allowed center moves down to it, so the player's top edge stops at the line; no wall = 0, the world's top as before
@@ -696,6 +744,7 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
                 for (const b of waveBoxes) {
                     if (overlaps(ent.x ?? 0, ent.y ?? 0, ent.w, ent.h, b)) ent.y = Math.max(b.y - ent.h / 2, ent.h / 2)
                 }
+                } // else: **none** -> **free movement only when not walking a WalkPath**, mechanism: the block above moves the player instead
                 // the wave pushes: when a rising wave box reaches the player,
                 // the player's center is set so the feet sit on the box's top
                 // edge, and the player rides up the shore with the water.
@@ -944,6 +993,18 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
 
     const onTickRef = useRef(onTick)
     onTickRef.current = onTick
+    const onTapRef = useRef(onTap)
+    onTapRef.current = onTap
+    const onArriveRef = useRef(onArrive)
+    onArriveRef.current = onArrive
+    const walkRef = useRef<{ points: WalkPath['points'], i: number } | null>(null)
+    useEffect(() => {
+        if (walkPath?.points.length) walkRef.current = { points: walkPath.points, i: 0 }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [walkPath?.key])
+    // latest onTap / onArrive for the mount-time tick, and the WalkPath being
+    // walked (i = the next point). A new walkPath key starts it over from
+    // its first point
     const onShootRef = useRef(onShoot)
     onShootRef.current = onShoot
     const tapRef = useRef<{ t: number, x: number, y: number } | null>(null)
@@ -1028,10 +1089,11 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
     const handleDown = (e: PointerEvent<HTMLDivElement>) => {
         if (activeIdRef.current !== null && e.pointerId !== activeIdRef.current && tapRef.current && performance.now() - tapRef.current.t > PINCH_GAP_MS && onShootRef.current?.()) { e.stopPropagation(); return } // second finger: **always shoots mid-level** -> **shoots only when it lands PINCH_GAP_MS+ after the stick finger**, reason: pinch zoom didn't work in the shooting quest, mechanism: two fingers landing together skip this line and reach handlePinchDown (pinch); a later second finger still shoots, and stopPropagation keeps it out of the pinch // second finger: **ignored, then starts a pinch** -> **shoots when onShoot fires**, mechanism: stopPropagation keeps it out of handlePinchDown on the scene div, so no pinch starts and the stick stays held
         if (activeIdRef.current !== null || pinchRef.current) return
-        if (tapNpc(e.clientX, e.clientY)) return // down: **always starts the stick** -> **NPC tap first**, reason: NPCs are tapped through the stick overlay, mechanism: tapNpc handles talk taps and a consumed tap returns before the pointer is captured, so no stick appears
+        if (!onTap && tapNpc(e.clientX, e.clientY)) return // tapNpc: **always** -> **not in tap mode**, mechanism: a tile island's taps go to onTap, so a tap on an NPC can't start a talk the player is too far away for // down: **always starts the stick** -> **NPC tap first**, reason: NPCs are tapped through the stick overlay, mechanism: tapNpc handles talk taps and a consumed tap returns before the pointer is captured, so no stick appears
         activeIdRef.current = e.pointerId
         tapRef.current = { t: performance.now(), x: e.clientX, y: e.clientY } // down: **no record** -> **time + spot**, mechanism: handleUp compares against it to spot a quick tap
         e.currentTarget.setPointerCapture(e.pointerId)
+        if (onTap) return // stick: **always** -> **not in tap mode**, mechanism: the pointer is still tracked, so handleUp can tell the tap, but no ring is drawn and stickRef stays 0
         const rect = e.currentTarget.getBoundingClientRect()
         const base = { x: e.clientX - rect.left, y: e.clientY - rect.top }
         setStick({ base, knob: base })
@@ -1065,6 +1127,19 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
         const tap = tapRef.current
         tapRef.current = null
         if (e.type === 'pointerup' && tap && performance.now() - tap.t < TAP_MS && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < TAP_PX) onShootRef.current?.()
+        if (onTap && e.type === 'pointerup' && tap && !pinchRef.current && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < TAP_PX) {
+            const r = e.currentTarget.getBoundingClientRect()
+            const view = viewPortRef.current
+            onTap({
+                x: view.x + (e.clientX - r.left - r.width / 2) / zoomRef.current,
+                y: view.y + (e.clientY - r.top - r.height / 2) / zoomRef.current,
+                choice: tappedChoice(e.clientX, e.clientY),
+            })
+        }
+        // tap mode: a finger lifted where it went down (any hold length, not
+        // during a pinch) is a tap. The overlay fills the scene, whose center
+        // is the camera point, so the offset from the center / zoom is world
+        // px from viewPortRef
         release()
     }
     // up / cancel / lost capture: **release() for any pointer** -> **only the stick's own pointer**, mechanism: a shooting second finger lifting no longer lets go of the stick. A plain pointerup under TAP_MS that moved under TAP_PX counts as a tap and shoots (no-op without onShoot); cancel / lost capture only release

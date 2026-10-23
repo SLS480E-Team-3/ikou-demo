@@ -6,9 +6,9 @@
 
 ## Exports
 
-### Types `IslandFile`, `FileSection`, `FileNpc`, `FileSprite`
+### Types `IslandFile`, `FileSection`, `FileNpc`, `FileTile`, `FileSprite`
 
-`IslandFile` = `{ islandId, ver, savedAt, bgColor, sections, objects: PlacedObject[], npcs, sprites }`. `FileSection` = `{ id, start?, end, color, separator?, solid?, wave? }`. `FileNpc` = `{ id, npc (dialogs json key), x, y (body center), questId? }`. `FileSprite` = an uploaded `ObjectDef` plus its `key`.
+`IslandFile` = `{ islandId, ver, savedAt, bgColor, sections, objects: PlacedObject[], npcs, tiles?, sprites }`. `FileTile` = `{ id, x, y (center), questId? }`; the array order is the path order. With one or more tiles the island plays as a tile path (`islands/tiles.tsx`); files without `tiles` stay free roam. `FileSection` = `{ id, start?, end, color, separator?, solid?, wave? }`. `FileNpc` = `{ id, npc (dialogs json key), x, y (body center), questId? }`. `FileSprite` = an uploaded `ObjectDef` plus its `key`.
 
 ### Constants `ISLAND_FILE_BUCKET` (`island-editor`), `SPRITE_BUCKET` (`sprites`), `FILE_RE`, `fileName(islandId, ver)`
 

@@ -25,6 +25,11 @@ export type FileNpc = { id: string, npc: string, x: number, y: number, questId?:
 // the body's center in world px, questId the quests row it offers (none =
 // it only talks)
 
+export type FileTile = { id: string, x: number, y: number, questId?: number }
+// a placed tile of the island's tile path (GitHub issue #6): x / y its
+// center in world px, questId the quests row it starts. The tiles' order in
+// IslandFile.tiles is the path order (tile s, s + 1, ...)
+
 export type FileSprite = ObjectDef & { key: string }
 // an uploaded sprite (F-11): a catalog entry whose src is a Supabase Storage
 // url, with no hitBox (walk-through)
@@ -37,6 +42,7 @@ export type IslandFile = {
     sections: FileSection[],
     objects: PlacedObject[],
     npcs: FileNpc[],
+    tiles?: FileTile[], // tiles: **none** -> **optional FileTile[]**, mechanism: an island with tiles plays as a tile path (tap a tile to walk there); files saved before tiles have none and stay free roam
     sprites: FileSprite[],
 }
 // what /IslandEditor saves as <islandId>_ver<ver>.json in the island-editor

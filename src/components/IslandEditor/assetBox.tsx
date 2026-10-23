@@ -5,6 +5,7 @@ import { CSSProperties, FormEvent, useState } from "react"
 import { OBJECTS } from "@/components/Game/Object/objects"
 import { NPC_SCRIPTS } from "@/components/Game/npcs/npcs"
 import type { FileSprite } from "@/components/Game/islands/islandFile"
+import { TILE_IMG } from "@/components/Game/islands/tiles"
 import type { Tool } from "./canvas"
 
 type Props = {
@@ -36,6 +37,13 @@ export default function AssetBox({ tool, onTool, uploaded, onUploaded }: Props) 
                     </button>
                 ))}
             </details>
+            <details open>
+                <summary style={{ cursor: 'pointer' }}>tiles/</summary>
+                <button style={item(tool?.kind === 'tile')} onClick={() => pick({ kind: 'tile' })}>
+                    <img src={TILE_IMG.uncleared} alt="" style={thumb} />tile
+                </button>
+            </details>
+            {/* tiles/: one entry; each drop adds the next tile of the path */}
             <details open>
                 <summary style={{ cursor: 'pointer' }}>objects/</summary>
                 {[...builtIn.map(k => ({ key: k, src: OBJECTS[k].sprite.src })), ...uploaded.map(u => ({ key: u.key, src: u.sprite.src, up: true }))].map(o => (

@@ -18,7 +18,7 @@ export function SelectionPanel({ file, selection, commit, quests, onDelete, onDu
     file: IslandFile, selection: Selection, commit: Commit, quests: EditorQuest[],
     onDelete: () => void, onDuplicate: () => void, onQuestSaved: (q: EditorQuest) => void,
 }) {
-    if (!selection) return <div style={{ ...box, opacity: 0.7 }}>Nothing selected. Click an object or NPC on the island.</div>
+    if (!selection) return <div style={{ ...box, opacity: 0.7 }}>Nothing selected. Click an object, NPC or tile on the island.</div>
     const buttons = <div style={row}><button onClick={onDuplicate}>Duplicate (⌘D)</button><button onClick={onDelete}>Delete (⌫)</button></div>
 
     if (selection.kind === 'object') {
@@ -40,6 +40,52 @@ export function SelectionPanel({ file, selection, commit, quests, onDelete, onDu
             </div>
         )
     }
+
+    if (selection.kind === 'tile') {
+        const tiles = file.tiles ?? []
+        const i = tiles.findIndex(x => x.id === selection.id)
+        const tile = tiles[i]
+        if (!tile) return null
+        const set = (patch: Partial<typeof tile>, key: string) => commit(f => ({ ...f, tiles: (f.tiles ?? []).map(x => x.id === tile.id ? { ...x, ...patch } : x) }), `${tile.id}:${key}`)
+        const move = (by: number) => commit(f => {
+            const t = [...(f.tiles ?? [])]; const j = i + by
+            if (j < 0 || j >= t.length) return f
+            ;[t[i], t[j]] = [t[j], t[i]]
+            return { ...f, tiles: t }
+        })
+        return (
+            <div style={box}>
+                <strong>tile {i + 1} of {tiles.length}</strong>
+                <span style={{ opacity: 0.7 }}>id {tile.id}</span>
+                <div style={row}>
+                    <label>x <input type="number" value={tile.x} onChange={e => set({ x: n(e.target.value) }, 'x')} style={num} /></label>
+                    <label>y <input type="number" value={tile.y} onChange={e => set({ y: n(e.target.value) }, 'y')} style={num} /></label>
+                </div>
+                <div style={row}>path order
+                    <button onClick={() => move(-1)} disabled={i === 0}>↑ earlier</button>
+                    <button onClick={() => move(1)} disabled={i === tiles.length - 1}>↓ later</button>
+                </div>
+                <label style={row}>quest
+                    <select value={tile.questId ?? ''} onChange={e => set({ questId: e.target.value ? Number(e.target.value) : undefined }, 'quest')}>
+                        <option value="">none</option>
+                        {quests.map(q => <option key={q.id} value={q.id}>#{q.id} {q.title}</option>)}
+                    </select>
+                </label>
+                <QuestForm
+                    key={tile.questId ?? 'new'}
+                    islandId={file.islandId}
+                    quest={quests.find(q => q.id === tile.questId)}
+                    onSaved={q => { onQuestSaved(q); if (q.id !== tile.questId) set({ questId: q.id }, 'quest') }}
+                />
+                {buttons}
+            </div>
+        )
+    }
+    // a tile (issue #6): like an NPC, x / y (its center) and the quest it
+    // starts, made or edited in the same QuestForm (title, level, type,
+    // points, target). Path order swaps it with the tile before / after;
+    // the path runs tile 1 -> 2 -> ... and a tile opens once the one before
+    // it is cleared
 
     const npc = file.npcs.find(x => x.id === selection.id)
     if (!npc) return null
