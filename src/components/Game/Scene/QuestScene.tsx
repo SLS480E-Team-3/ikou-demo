@@ -3,8 +3,10 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import QuestComplete from "../questComplete"
+import { MatchingQuestIsland } from "./matchingQuestIsland" // imports: **+ MatchingQuestIsland**, mechanism: a quest with quest_type matching runs it
+import type { KosoadoGroup } from "../kosoado"
 import { DodgeQuestIsland } from "./dodgeQuestIsland" // imports: **QuestIsland only** -> **+ DodgeQuestIsland**, mechanism: island 2's NPCs open the dodge quest
-import type { QuestType } from "./tutorial"
+import type { QuestKind } from "./tutorial"
 
 export type QuestSceneProps = {
     islandId: number
@@ -13,7 +15,9 @@ export type QuestSceneProps = {
     tutorialSeen: boolean
     // whether Hiroko already asked this player about this quest type's
     // tutorial (a user_tutorials row for questType)
-    questType: QuestType
+    questType: QuestKind // type: **QuestType** -> **QuestKind**, mechanism: + 'matching'
+    group?: KosoadoGroup
+    // a matching quest's こそあど group (its target { group })
     // which quest island to run (islandQuestType): 'dodge' = DodgeQuestIsland,
     // 'door' = LeftRightQuestIsland, 'particle' = ParticleQuestIsland (kana
     // = に / で / mix), anything else = QuestIsland's catch quest
@@ -22,12 +26,23 @@ export type QuestSceneProps = {
 // already cleared it. The page (server) checks access and records the
 // start/resume; the scene (client) only renders
 
-export default function QuestScene({ islandId, quest, cleared, tutorialSeen, questType }: QuestSceneProps) { // params: **no questType** -> **+ questType**, mechanism: picks the island component and the tutorial type below // params: **no tutorialSeen** -> **+ tutorialSeen**, mechanism: passed on to QuestIsland as tutorial.seen
+export default function QuestScene({ islandId, quest, cleared, tutorialSeen, questType, group }: QuestSceneProps) { // params: **+ group**, mechanism: handed to MatchingQuestIsland // params: **no questType** -> **+ questType**, mechanism: picks the island component and the tutorial type below // params: **no tutorialSeen** -> **+ tutorialSeen**, mechanism: passed on to QuestIsland as tutorial.seen
     const router = useRouter()
     const Island = DodgeQuestIsland // Island: **dodge / door / particle / catch by questType** -> **DodgeQuestIsland**, mechanism: the demo ships island 1 only
     // all take onLeave, tutorial and children (the success slot); kana is
     // passed only to the two kana quests, since the door quest teaches verbs
     const kana = { kana: quest.kana ?? undefined }
+    const complete = !cleared && <div style={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 3 }}><QuestComplete quest={quest.id} points={quest.reward_points} /></div>
+    if (questType === 'matching') return (
+        <div style={{ position: 'relative', width: '100%', height: '100lvh' }}>
+            <MatchingQuestIsland group={group} onLeave={() => router.push(`/Game/${islandId}`)}>{complete}</MatchingQuestIsland>
+            <div style={{ position: 'absolute', top: 'calc(var(--safe-top) + 16px)', left: 16, zIndex: 2, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <Link href={`/Game/${islandId}`}>{'<-'}</Link>
+                {cleared && <div style={{ fontSize: '0.75rem' }}>cleared!</div>}
+            </div>
+        </div>
+    )
+    // matching: **dodge for every quest** -> **MatchingQuestIsland for quest_type matching**, reason: the こそあど quests (issue #8), mechanism: same back arrow and COMPLETE slot as the dodge quest below; no tutorial prop (no Hiroko tutorial for it yet)
     return (
         <div style={{ position: 'relative', width: '100%', height: '100lvh' }}> {/* wrapper: **BUBBLE_BG** -> **no bg**, mechanism: QuestIsland fills this box with the bubble color itself and measures it for the 2x island */}
             <Island

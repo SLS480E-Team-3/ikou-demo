@@ -15,6 +15,7 @@ Measures the box once, makes a square island one screen tall, stops any BGM and 
 | Name | Type | Meaning |
 | --- | --- | --- |
 | `onLeave` | `() => void` | Elena's はい |
+| `group` | `KosoadoGroup?` | the quest's こそあど group (default `pronoun`) |
 | `sensitivity` | `number?` | stick sensitivity, passed to GameScene |
 | `children` | `ReactNode?` | success slot (shown in `success` / `again`) |
 
@@ -24,7 +25,9 @@ Measures the box once, makes a square island one screen tall, stops any BGM and 
 
 | Topic | File | Where |
 | --- | --- | --- |
-| mobile-testing | `src/app/MobDev/[screen]/screenHost.tsx` | `SCREENS.QuestMatching` |
+| mobile-testing | `src/app/MobDev/[screen]/screenHost.tsx` | `SCREENS.QuestMatching` (`?group=`) |
+| quests | `src/components/Game/Scene/QuestScene.tsx` | `QuestScene` (quest_type `matching`) |
+| mobile-testing | `src/components/Game/Scene/islandPreview.tsx` | `IslandPreview` (a saved quest with a `{ group }` target) |
 
 ### `Training`, `Hud`, `Bar` (local)
 

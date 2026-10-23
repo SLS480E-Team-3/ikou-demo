@@ -20,10 +20,10 @@ Draws the 1400×2000 world scaled by `zoom`: bands (dashed separator line), the 
 `asset box/` → `npcs/` (NPC_SCRIPTS), `tiles/` (one `tile` entry) and `objects/` (OBJECTS + uploaded). Click picks / unpicks the tool. `Upload`: file, key (from the file name), w / h (from the image), POST to `/api/IslandEditor/sprites`.
 
 ## `panels.tsx` → `SelectionPanel`, `IslandPanel`
-`SelectionPanel`: object x / y / scale / sign, tile x / y / path order (↑ earlier / ↓ later) / quest dropdown plus `QuestForm`, or NPC x / y / quest dropdown plus `QuestForm` (title, level, type, points, target: kana, or answer / decoys for door). Saves the quest to Supabase and assigns it. Duplicate / Delete buttons. `IslandPanel`: bg color, then sections (id, color, start, end, separator, solid, wave, reorder, delete, add).
+`SelectionPanel`: object x / y / scale / sign, tile x / y / path order (↑ earlier / ↓ later) / quest dropdown plus `QuestForm`, or NPC x / y / quest dropdown plus `QuestForm` (title, level, type, points, target: kana, answer / decoys for door, or a こそあど group dropdown for matching, which also sets an empty / vocab level to koSoADo). Saves the quest to Supabase and assigns it. Duplicate / Delete buttons. `IslandPanel`: bg color, then sections (id, color, start, end, separator, solid, wave, reorder, delete, add).
 
 ## `phoneView.tsx` → `PhoneView` (default)
 The real `GameScene` in a `MobileView` phone frame, built from the file (`fileBg`, `layoutNpcs`, `registerSprites`). Touch / mouse / WASD walk the player. はい on a quest offer only shows which quest would open. With tiles it is in tile mode (`useTileWalk`): tap a tile to walk, はい shows the quest and marks the tile cleared for this view only (reset cleared button).
 
 ## `types.ts`
-`EditorQuest` (quests row), `QuestTarget` / `DoorTarget`, `QUEST_TYPES`, `LEVELS`.
+`EditorQuest` (quests row), `QuestTarget` / `DoorTarget` / `MatchingTarget` (`{ group }`), `QUEST_TYPES` (dodge, matching, …), `LEVELS`.
