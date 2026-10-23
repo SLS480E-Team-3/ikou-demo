@@ -41,7 +41,7 @@ export default function QuestScene({ islandId, quest, cleared, tutorialSeen, que
                 {!cleared && <div style={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 3 }}><QuestComplete quest={quest.id} points={quest.reward_points} /></div>}
             </Island> {/* scene: **<QuestIsland>** -> **<Island>**, mechanism: DodgeQuestIsland on island 2, QuestIsland elsewhere; onSeen type: **'original'** -> **questType**, mechanism: the dodge tutorial is saved as its own user_tutorials row */}
             {/* scene: **<GameScene QUEST_BG> + onQuest** -> **<QuestIsland> + onLeave**, mechanism: Elena's はい on the fail screen goes back to the island; the children are the success slot, so COMPLETE shows only after both levels are cleared */}
-            <div style={{ position: 'absolute', top: 16, left: 16, zIndex: 2, display: 'flex', flexDirection: 'column', gap: 8 }}> {/* overlay: **absolute top-left** -> unchanged; placeholder text removed, mechanism: the training is the content now */}
+            <div style={{ position: 'absolute', top: 'calc(var(--safe-top) + 16px)', left: 16, zIndex: 2, display: 'flex', flexDirection: 'column', gap: 8 }}> {/* top: **16** -> **safe-top + 16px**, reason: the Home Screen web app draws under a see-through status bar, mechanism: --safe-top (globals.css) is the clock / Dynamic Island inset there, 0 on desktop */} {/* overlay: **absolute top-left** -> unchanged; placeholder text removed, mechanism: the training is the content now */}
                 <Link href={`/Game/${islandId}`}>{'<-'}</Link>
                 {/* <div>{quest.title}</div> */}
                 {cleared && <div style={{ fontSize: '0.75rem' }}>cleared!</div>}

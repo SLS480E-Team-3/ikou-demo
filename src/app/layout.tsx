@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { Viewport } from 'next'
+import type { Metadata, Viewport } from 'next'
 import {
   IPHONE17_SCREEN,
   IPHONE17_PRO_SCREEN,
@@ -68,6 +68,23 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
 }
+
+export const metadata: Metadata = {
+  title: 'Ikko!!',
+  appleWebApp: {
+    capable: true,
+    title: 'Ikko',
+    statusBarStyle: 'black-translucent',
+  },
+  other: { 'apple-mobile-web-app-capable': 'yes' }, // other: **none** -> **apple-mobile-web-app-capable**, reason: Next only emits the newer mobile-web-app-capable, mechanism: older iOS (before the manifest's display: standalone counted) reads this exact name
+}
+// Home Screen web app (iOS): capable = launched from the Home Screen icon it
+// opens full screen without Safari's bars (with app/manifest.ts display
+// standalone). black-translucent makes the status bar see-through with
+// white text, so the page draws under the clock / Dynamic Island; together
+// with viewportFit cover the game fills the whole screen, and overlays use
+// var(--safe-top) / var(--safe-bottom) to stay clear of the clock and the
+// home indicator. The icon is app/apple-icon.png
 
 export default function RootLayout({
   children,

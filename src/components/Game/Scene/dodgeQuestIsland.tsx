@@ -45,8 +45,8 @@ function Hud({ getHud }: { getHud: () => TrainingHud }) {
     return (
         <>
             {overlay}
-            <Bar frac={hud.timeFrac} color="cyan" style={{ top: TIMER_TOP, left: '5%', width: '90%', height: TIMER_H }} />
-            <Bar frac={hud.hp / hud.maxHP} color={HP_COLOR} style={{ bottom: HP_BOTTOM, left: '5%', width: '90%', height: HP_H }} />
+            <Bar frac={hud.timeFrac} color="cyan" style={{ top: `calc(var(--safe-top) + ${TIMER_TOP}px)`, left: '5%', width: '90%', height: TIMER_H }} /> {/* top: **TIMER_TOP** -> **safe-top + TIMER_TOP**, reason: the Home Screen web app draws under a see-through status bar, mechanism: --safe-top is 0 outside it, so Safari / desktop are unchanged */}
+            <Bar frac={hud.hp / hud.maxHP} color={HP_COLOR} style={{ bottom: `calc(var(--safe-bottom) + ${HP_BOTTOM}px)`, left: '5%', width: '90%', height: HP_H }} /> {/* bottom: **HP_BOTTOM** -> **safe-bottom + HP_BOTTOM**, reason: same, for the home indicator */}
         </>
     )
 }
