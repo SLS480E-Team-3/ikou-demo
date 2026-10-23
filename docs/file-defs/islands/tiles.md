@@ -6,7 +6,7 @@
 
 ## Constants
 
-`TILE_W` / `TILE_H` (32 × 20 world px = the 8 × 5 art px files × 4), `TILE_IMG` (`/img/tile_cleared.png`, `/img/tile_uncleared.png`). Path color `#58544c`, 4 px wide (from `public/img/tile-path-ref.png`). `TAP_PAD` 16 world px of slack around a tile for taps.
+`TILE_W` / `TILE_H` (42 × 26 world px = the 8 × 5 art px files × ~5.2, 1.3x the sprite scale), `TILE_IMG`: `cleared` (green, `/img/tile_cleared.png`), `available` (red, the next tile to play, `/img/tile-available.png`), `uncleared` (gray, locked, `/img/tile_uncleared.png`). Clear animation timing: `POP_MS` 400, `GROW_MS` 700, `OPEN_MS` 400 (`ANIM_MS` total). Path color `#58544c`, 5 px wide (from `public/img/tile-path-ref.png`). `TAP_PAD` 16 world px of slack around a tile for taps.
 
 ## Functions
 
@@ -20,15 +20,15 @@ The furthest tile the player may walk to: the first uncleared one, or the last w
 
 The player's center when standing on a tile (feet on the tile's center). **Input:** `FileTile`. **Output:** `{ x, y }`. **Side effects:** none.
 
-### `TilePath({ tiles, cleared })`
+### `TilePath({ tiles, cleared, anim? })`
 
-Draws the path in world px at zIndex 0: a rotated bar from each tile's center to the next (solid once the tile it leaves is cleared, faint dashed before), then each tile's sprite (green when cleared).
+Draws the path in world px at zIndex 0: a rotated bar from each tile's center to the next (solid once the tile it leaves is cleared, faint dashed before), then each tile's sprite (green cleared, red the first uncleared, gray locked). `anim` = a tile index playing its clear animation, in order: the tile pops green, the solid line grows over the dashed one, the next tile pops in red (CSS keyframes in a `<style>`).
 
 **Output:** JSX. **Side effects:** none.
 
-### `useTileWalk(tiles, cleared, onYes)`
+### `useTileWalk(tiles, cleared, onYes, seenKey)`
 
-The tile controls. Keeps the tile the player stands on (starts on the first uncleared), the walk in progress and the tile being asked about.
+The tile controls. Keeps the tile the player stands on (starts on the first uncleared), the walk in progress, the tile being asked about, and the clear animation. When `cleared` holds a tile not in the played list (`localStorage['ikko-tiles-seen:' + seenKey]`), the newest such tile animates, the player is moved onto it (`moveRequest`), and the next tile can't be tapped until the animation ends. The list is rewritten to the cleared tiles each time.
 
 **Input**
 
@@ -37,13 +37,14 @@ The tile controls. Keeps the tile the player stands on (starts on the first uncl
 | `tiles` | `FileTile[]` | the island's tiles, path order |
 | `cleared` | `boolean[]` | per tile, its quest is done |
 | `onYes` | `(tile: FileTile) => void` | called on はい |
+| `seenKey` | `string` | names the played-animation list: `game-<island>`, `editor-<island>`, `mobdev-<island>-<ver>` |
 
-**Output:** `{ spawn, sceneProps }`. `spawn` = `{ x, y }` to put on `bgProps` (GameScene's spawn). `sceneProps` = `{ onTap, walkPath, onArrive, renderWorld }` for `<GameScene>`:
+**Output:** `{ spawn, sceneProps }`. `spawn` = `{ x, y }` to put on `bgProps` (GameScene's spawn). `sceneProps` = `{ onTap, walkPath, onArrive, renderWorld, moveRequest }` for `<GameScene>`:
 - `onTap`: while asking, only はい / いいえ count (はい → `onYes`); otherwise a tap on a reachable tile walks there through every tile in between, a tap on the current tile asks again, locked tiles are ignored.
 - `onArrive`: the walk ended, so the player is on the target tile and its yes / no shows.
 - `renderWorld`: `TilePath` plus the yes / no `DialogBubble` over the player (はじめる？ / もういちど？ on a cleared tile).
 
-**Side effects:** React state only.
+**Side effects:** React state; reads / writes the played-animation list in localStorage.
 
 **Used in**
 

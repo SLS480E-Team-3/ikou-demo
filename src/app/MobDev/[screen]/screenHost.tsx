@@ -6,7 +6,7 @@ import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
 import type { ScreenType } from "../screenTypes"
 
-type ScreenProps = { island: number, sensitivity?: number, onLeave: () => void }
+type ScreenProps = { island: number, ver?: number, sensitivity?: number, onLeave: () => void } // props: **+ ver**, mechanism: ?ver=N picks the saved island version GameScene shows
 
 const Tint = ({ color }: { color: string }) => <style>{`html, body { background-color: ${color}; }`}</style>
 // paints the page behind the scene, like Game/layout.tsx: Safari tints its
@@ -17,7 +17,7 @@ const Tint = ({ color }: { color: string }) => <style>{`html, body { background-
 const SCREENS: Record<ScreenType, ComponentType<ScreenProps>> = {
     GameScene: dynamic(() => import("@/components/Game/Scene/islandPreview").then(m => {
         const C = m.default
-        return ({ island, sensitivity }: ScreenProps) => <C start={island} sensitivity={sensitivity} tint />
+        return ({ island, ver, sensitivity }: ScreenProps) => <C start={island} ver={ver} sensitivity={sensitivity} tint /> // ver: **none** -> **ver**, mechanism: passed to IslandPreview, which loads that <island>_ver<N>.json (newest when left out)
     }), { ssr: false }), // adapter: **Tint with islandBg(start island)** -> **IslandPreview tint prop**, reason: the strips kept the first island's color after prev / next, mechanism: IslandPreview tints with the island it is showing now
     QuestDodge: dynamic(() => Promise.all([import("@/components/Game/Scene/dodgeQuestIsland"), import("@/components/Game/Entity/dialogBubble")]).then(([m, { BUBBLE_BG }]) => {
         const C = m.DodgeQuestIsland
@@ -46,6 +46,7 @@ export default function ScreenHost({ screen }: { screen: ScreenType }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '100lvh', overflow: 'auto' }}> {/* wrapper: **position fixed, inset 0** -> **absolute, 100lvh**, reason: iOS 26 Safari froze its status-bar / URL-bar colors on a fixed element touching the screen edges, mechanism: not fixed, so Safari tints the status bar from the live body background (GameScene tintEdges); 100lvh like /Game's IslandScene runs the scene under the glass URL bar so the bar shows the scene itself */} {/* wrapper: **width 100%, height 100lvh** -> **position fixed, inset 0**, reason: lvh is taller than what Safari shows, so the bottom of the scene (island buttons) sat under the floating URL bar, mechanism: a fixed box pinned to all 4 edges is exactly the visible viewport and resizes with the bars, no vh units; overflow auto lets a form taller than the screen scroll inside it */}
             <Screen
                 island={Math.trunc(toNum(query.get('island')) ?? 1)}
+                ver={toNum(query.get('ver'))}
                 sensitivity={toNum(query.get('sens'))}
                 onLeave={() => router.push('/MobDev')}
             />

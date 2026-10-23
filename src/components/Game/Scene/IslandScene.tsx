@@ -54,7 +54,7 @@ export default function IslandScene({ islandId, points, quests, layout }: Island
     // entry, so it talks normally even though onQuest is always set
     const tiles = layout?.tiles ?? []
     const cleared = tiles.map(t => quests.some(q => q.id === t.questId && q.status === 'done'))
-    const tileWalk = useTileWalk(tiles, cleared, t => { if (t.questId) router.push(`/Game/${islandId}/${t.questId}`) })
+    const tileWalk = useTileWalk(tiles, cleared, t => { if (t.questId) router.push(`/Game/${islandId}/${t.questId}`) }, `game-${islandId}`) // args: **+ seenKey game-<island>**, mechanism: a tile cleared in a quest animates once on the way back
     const tileMode = tiles.length > 0
     const bg = layout ? fileBg(layout) : islandBg(islandId)
     // tile mode (issue #6): with tiles in the saved island, the player starts

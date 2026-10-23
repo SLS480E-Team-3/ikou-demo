@@ -1,7 +1,7 @@
 // DEV
 'use client'
 
-import { CSSProperties, /* useEffect, */ useState } from "react" // imports: **useEffect** -> **commented out**, mechanism: its only use, the island BGM, is commented out
+import { CSSProperties, useEffect, useState } from "react" // imports: **useEffect commented out** -> **useEffect**, mechanism: loads the island's saved version (the BGM effect stays commented out) // imports: **useEffect** -> **commented out**, mechanism: its only use, the island BGM, is commented out
 // import { ISLAND_BGM, playBgm } from "@/components/Game/Entity/voice" // music: **on** -> **commented out**, reason: BGM and quest clear / fail music turned off for now, mechanism: uncomment to bring it back
 import GameScene, { ISLAND_COUNT, islandBg } from "@/components/Game/Scene/gameScene"
 import { ISLAND_MAPS } from "@/components/Game/islands"
@@ -10,10 +10,29 @@ import { npcsForRow } from "@/components/Game/npcs/npcs"
 import { DodgeQuestIsland } from "@/components/Game/Scene/dodgeQuestIsland" // imports: **none** -> **DodgeQuestIsland**, mechanism: island 2's NPCs open the dodge quest, like QuestScene
 import { ISLAND_NPCS } from "@/components/Game/npcs"
 import { KANA_ROWS } from "@/components/Game/kana"
+import { fileBg, registerSprites, type IslandFile } from "@/components/Game/islands/islandFile"
+import { layoutNpcs, type LayoutQuest } from "@/components/Game/islands/layoutNpcs"
+import { useTileWalk } from "@/components/Game/islands/tiles"
+// imports: **none** -> **islandFile, layoutNpcs, useTileWalk**, mechanism: /MobDev plays the island's saved <island>_ver<N>.json like /Game does
 // MobileTester's 'game scene' page, moved here so /MobDev/GameScene?island=N can show it
 // full-screen on a phone too
 
-export default function IslandPreview({ sensitivity, start = 1, tint = false }: { sensitivity?: number, start?: number, tint?: boolean }) { // props: **sensitivity, start** -> **+ tint**, reason: the page color around the scene stayed on the first island after next ▶, mechanism: tint is drawn here, where the current island is known // props: **sensitivity** -> **+ start, sensitivity optional**, mechanism: /MobDev/GameScene?island=N opens on island N; GameScene falls back to SENSITIVITY_DEF // props: **sensitivity** -> **+ start, sensitivity optional**, mechanism: /MobDev/GameScene?island=N opens on island N; GameScene falls back to SENSITIVITY_DEF
+type Saved = { island: number, ver: number, file: IslandFile | null, quests: LayoutQuest[] }
+// what loadSaved found for one island: file null = no saved version (or
+// ?ver=0), so the code's map plays
+
+const loadSaved = async (island: number, ver?: number): Promise<Saved> => {
+    const get = (url: string): Promise<{ versions?: number[], quests?: LayoutQuest[], file?: IslandFile }> => fetch(url).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+    const [{ versions = [] }, { quests = [] }] = await Promise.all([get(`/api/IslandEditor?island=${island}`), get(`/api/IslandEditor/quests?island=${island}`)])
+    const v = ver ?? versions[versions.length - 1] ?? 0
+    const { file = null } = v ? await get(`/api/IslandEditor?island=${island}&ver=${v}`) : {}
+    return { island, ver: file ? v : 0, file, quests }
+}
+// the island's saved version through the editor's API (both DEV): the
+// asked ver, else the newest. Quests come along for the NPCs' and tiles'
+// quest ids. Any failed request just means "nothing saved"
+
+export default function IslandPreview({ sensitivity, start = 1, tint = false, ver }: { sensitivity?: number, start?: number, tint?: boolean, ver?: number }) { // props: **+ ver**, mechanism: ?ver=N opens that saved version of the start island (0 = the code's map); left out = the newest // props: **sensitivity, start** -> **+ tint**, reason: the page color around the scene stayed on the first island after next ▶, mechanism: tint is drawn here, where the current island is known // props: **sensitivity** -> **+ start, sensitivity optional**, mechanism: /MobDev/GameScene?island=N opens on island N; GameScene falls back to SENSITIVITY_DEF // props: **sensitivity** -> **+ start, sensitivity optional**, mechanism: /MobDev/GameScene?island=N opens on island N; GameScene falls back to SENSITIVITY_DEF
     const [island, setIsland] = useState(Math.min(ISLAND_COUNT, Math.max(1, start))) // initial: **1** -> **start, clamped to 1..ISLAND_COUNT**, mechanism: a bad ?island= still opens a real island
     const [row, setRow] = useState(0)
     // the kana row the NPCs offer (0 = あ–お): with no login there's no quest
@@ -21,6 +40,19 @@ export default function IslandPreview({ sensitivity, start = 1, tint = false }: 
     const npcs = npcsForRow(ISLAND_NPCS[island] ?? [], row)
     const [inQuest, setInQuest] = useState<string | false>(false) // inQuest: **boolean** -> **kana | false**, mechanism: holds the kana of the NPC whose quest was accepted
     const btn: CSSProperties = { padding: '8px 12px' }
+    const [saved, setSaved] = useState<Saved | null>(null)
+    const [done, setDone] = useState<Record<string, string[]>>({})
+    // cleared tile ids per island + ver, kept here because SavedIsland
+    // unmounts while the quest island shows
+    useEffect(() => {
+        let off = false
+        loadSaved(island, island === start ? ver : undefined).then(s => { if (!off) setSaved(s) })
+        return () => { off = true }
+    }, [island, start, ver])
+    const loaded = saved?.island === island ? saved : null
+    // the saved version of the island on screen, loaded again on prev /
+    // next (?ver only applies to the start island). loaded stays null until
+    // this island's answer is in, since GameScene reads its bg once at mount
     // useEffect(() => {
     //     const url = inQuest ? undefined : ISLAND_BGM[island]
     //     return url ? playBgm(url) : undefined
@@ -42,6 +74,26 @@ export default function IslandPreview({ sensitivity, start = 1, tint = false }: 
     )
     // Shuto's はい swaps in the Quest Island, Kaeru's はい swaps back to the
     // same island: the no-login stand-in for QuestScene's router.push
+    const islandButtons = (
+        <div style={{ position: 'absolute', bottom: 'calc(var(--safe-bottom) + 80px)', left: 16, right: 16, zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', pointerEvents: 'none' }}>
+            <button style={{ ...btn, pointerEvents: 'auto' }} disabled={island <= 1} onClick={() => setIsland(i => Math.max(1, i - 1))}>◀ prev</button>
+            <span style={{ textAlign: 'center' }}>island {island}<br /><small>{!loaded ? 'loading…' : loaded.file ? `${island}_ver${loaded.ver}.json` : 'code (islands.ts)'}</small></span>
+            <button style={{ ...btn, pointerEvents: 'auto' }} disabled={island >= ISLAND_COUNT} onClick={() => setIsland(i => Math.min(ISLAND_COUNT, i + 1))}>next ▶</button>
+        </div>
+    )
+    // the island switcher, shared by the saved and code views, with which
+    // version is showing under the island number
+    if (!loaded) return <div style={{ position: 'relative', width: '100%', height: '100%' }}>{pageTint}{islandButtons}</div>
+    if (loaded.file) return (
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            {pageTint}
+            <SavedIsland key={`${island}-${loaded.ver}`} file={loaded.file} quests={loaded.quests} tint={tint} sensitivity={sensitivity} onQuest={setInQuest}
+                done={done[`${island}-${loaded.ver}`] ?? []} onClear={id => setDone(d => { const k = `${island}-${loaded.ver}`; const l = d[k] ?? []; return l.includes(id) ? d : { ...d, [k]: [...l, id] } })} /> {/* props: **+ done, onClear**, reason: cleared tiles were lost when the quest island replaced SavedIsland, mechanism: the list lives in IslandPreview, so coming back from the quest the tile is cleared and its clear animation plays */}
+            {islandButtons}
+        </div>
+    )
+    // a saved version plays like /Game's IslandScene with a layout. The kana
+    // row buttons are left out: its NPCs offer the quests picked in the editor
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
             {pageTint}
@@ -54,11 +106,7 @@ export default function IslandPreview({ sensitivity, start = 1, tint = false }: 
             {/* bottom: **64** -> **safe-bottom + 128px**, reason: stays one line above the island buttons, which moved up, mechanism: same 48px gap as before */}
             {/* kana row switcher, one line above the island buttons: same
                 layout, steps row through KANA_ROWS */}
-            <div style={{ position: 'absolute', bottom: 'calc(var(--safe-bottom) + 80px)', left: 16, right: 16, zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', pointerEvents: 'none' }}>
-                <button style={{ ...btn, pointerEvents: 'auto' }} disabled={island <= 1} onClick={() => setIsland(i => Math.max(1, i - 1))}>◀ prev</button>
-                <span>island {island}</span>
-                <button style={{ ...btn, pointerEvents: 'auto' }} disabled={island >= ISLAND_COUNT} onClick={() => setIsland(i => Math.min(ISLAND_COUNT, i + 1))}>next ▶</button>
-            </div>
+            {islandButtons} {/* buttons: **inline div** -> **islandButtons**, mechanism: shared with the saved view, now with the version label */}
             {/* bottom: **16** -> **safe-bottom + 80px**, reason: on iPhone Safari next ▶ sat under the floating URL bar and couldn't be tapped, mechanism: lifted clear of the bar (about 64px tall) plus the home-indicator inset (--safe-bottom, globals.css) */}
         </div>
     )
@@ -67,3 +115,27 @@ export default function IslandPreview({ sensitivity, start = 1, tint = false }: 
 // but switching in place. key={island} remounts GameScene so the new
 // bg color and spawn take effect (it reads them once at mount); islands
 // without a map file get an empty field
+
+function SavedIsland({ file, quests, tint, sensitivity, onQuest, done, onClear }: { file: IslandFile, quests: LayoutQuest[], tint: boolean, sensitivity?: number, onQuest: (kana: string) => void, done: string[], onClear: (id: string) => void }) { // props: **+ done, onClear**, mechanism: see IslandPreview
+    registerSprites(file.sprites)
+    const npcs = layoutNpcs(file.npcs, quests)
+    const tiles = file.tiles ?? []
+    const kanaOf = (id?: number) => {
+        const q = quests.find(x => x.id === id)
+        return (typeof q?.target === 'string' && q.target) || q?.kana || 'あ'
+    }
+    const tileWalk = useTileWalk(tiles, tiles.map(t => done.includes(t.id)), t => {
+        onClear(t.id)
+        onQuest(kanaOf(t.questId))
+    }, `mobdev-${file.islandId}-${file.ver}`) // done: **own state** -> **from IslandPreview**, mechanism: survives the quest island; seenKey: **+ mobdev-<island>-<ver>**, mechanism: the clear animation plays on the way back
+    const tileMode = tiles.length > 0
+    const bg = fileBg(file)
+    return <GameScene tintEdges={tint} sensitivity={sensitivity} {...(tileMode && tileWalk.sceneProps)} bgProps={tileMode && tileWalk.spawn ? { ...bg, ...tileWalk.spawn } : bg}
+        objects={file.objects} npcs={npcs} onQuest={i => onQuest(kanaOf(npcs[i]?.quest?.id))} />
+}
+// a saved island, built the way IslandScene builds one (fileBg, uploaded
+// sprites, layoutNpcs, tile mode). With no login, はい on a tile or NPC
+// opens the dodge quest island with that quest's kana (its string target,
+// else kana, else あ), and a tile's はい marks it cleared (onClear, kept in
+// IslandPreview) so the path to the next tile opens, with its clear
+// animation, when the quest island hands back

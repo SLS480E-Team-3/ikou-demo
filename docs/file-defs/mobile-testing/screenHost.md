@@ -16,9 +16,9 @@ Renders `SCREENS[screen]` in a `position: fixed; inset: 0` wrapper (exactly the 
 | --- | --- | --- |
 | `screen` | `ScreenType` | Which screen to show |
 
-Reads `?island` (int, default 1) and `?sens` (number or `undefined`) via `useSearchParams`.
+Reads `?island` (int, default 1), `?ver` (saved island version for GameScene; missing = newest, 0 = the code's map) and `?sens` (number or `undefined`) via `useSearchParams`.
 
-**Output:** JSX: the chosen screen with `island`, `sensitivity`, `onLeave`.
+**Output:** JSX: the chosen screen with `island`, `ver`, `sensitivity`, `onLeave`.
 
 **Side effects:** fetches the screen's JS chunk on first render; `onLeave` does `router.push('/MobDev')`.
 

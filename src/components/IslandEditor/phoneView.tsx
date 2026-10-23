@@ -37,7 +37,7 @@ export default function PhoneView({ file, quests }: { file: IslandFile, quests: 
         const q = quests.find(x => x.id === t.questId)
         setNote(`はい → the game would open ${q ? `quest #${q.id} "${q.title}"` : 'nothing (no quest on this tile)'}; marked cleared here so the next tile opens`)
         setDone(d => d.includes(t.id) ? d : [...d, t.id])
-    })
+    }, `editor-${file.islandId}`) // args: **+ seenKey**, mechanism: はい here plays the clear animation
     const tileMode = tiles.length > 0
     // tile mode, like IslandScene: no player is logged in here, so a tile's
     // はい marks it cleared for this phone view only, which opens the path to
