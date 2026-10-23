@@ -6,6 +6,7 @@ import { NPC_SCRIPTS } from "@/components/Game/npcs/npcs"
 import { sectionStart, type FileSection, type IslandFile } from "@/components/Game/islands/islandFile"
 import type { Selection } from "./canvas"
 import { LEVELS, QUEST_TYPES, type DoorTarget, type EditorQuest } from "./types"
+import { KANA_ROMAJI, KANA_ROWS } from "@/components/Game/kana" // imports: **+ KANA_ROWS, KANA_ROMAJI**, mechanism: the kana target selector
 import { KOSOADO, KOSOADO_GROUPS, groupOf, type KosoadoGroup } from "@/components/Game/kosoado" // imports: **+ kosoado**, mechanism: the matching quest's group dropdown
 
 type Commit = (f: (p: IslandFile) => IslandFile, key?: string) => void
@@ -130,7 +131,7 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
     const [msg, setMsg] = useState('')
     useEffect(() => { setMsg('') }, [quest])
     const door = d.quest_type === 'door'
-    const matching = d.quest_type === 'matching'
+    const matching = d.quest_type === 'matching' || d.level === 'koSoADo' // matching: **type matching** -> **+ level koSoADo**, reason: a koSoADo quest's target is one of the four groups, mechanism: the group dropdown shows and saves { group } for either
     const [group, setGroup] = useState<KosoadoGroup>(groupOf(quest?.target) ?? 'pronoun')
     // the matching quest's こそあど group, saved as target { group }
 
@@ -149,7 +150,7 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
             <strong>{quest ? `edit quest #${quest.id}` : 'new quest'}</strong>
             <label style={row}>title <input value={d.title} onChange={e => setD({ ...d, title: e.target.value })} style={{ flex: 1 }} /></label>
             <div style={row}>
-                <label>level <select value={d.level ?? ''} onChange={e => setD({ ...d, level: e.target.value || null })}>
+                <label>level <select value={d.level ?? ''} onChange={e => { const l = e.target.value || null; setD({ ...d, level: l, ...(l === 'koSoADo' && (!d.quest_type || d.quest_type === 'dodge') ? { quest_type: 'matching' } : {}) }) }}> {/* onChange: **+ type matching on koSoADo**, reason: koSoADo quests are matching quests, and a dodge quest with a { group } target would train あ, mechanism: only replaces an empty or the default dodge type */}
                     <option value="">(none)</option>
                     {[...LEVELS, ...(d.level && !LEVELS.includes(d.level) ? [d.level] : [])].map(l => <option key={l}>{l}</option>)}
                 </select></label> {/* level: **free text + datalist** -> **select of LEVELS**, reason: pick a level instead of typing it, mechanism: a saved level not in LEVELS (e.g. the old meaning) is kept as an extra option so it isn't lost */}
@@ -159,11 +160,15 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
                 <label>points <input type="number" value={d.reward_points ?? 0} onChange={e => setD({ ...d, reward_points: n(e.target.value) })} style={{ width: 52 }} /></label>
             </div>
             {matching ? <label style={row}>target <select value={group} onChange={e => setGroup(e.target.value as KosoadoGroup)} style={{ flex: 1, minWidth: 0 }}>
-                {KOSOADO_GROUPS.map(g => <option key={g} value={g}>{KOSOADO[g].name}: {KOSOADO[g].words.map(w => w.word).join('、')}</option>)}
+                {KOSOADO_GROUPS.map(g => <option key={g} value={g}>{KOSOADO[g].name}: {KOSOADO[g].words.map(w => w.word).join(', ')}</option>)}
             </select></label> : door ? <>
                 <label style={row}>answer <input value={answer} placeholder="食べる, 歩く, 走る" onChange={e => setAnswer(e.target.value)} style={{ flex: 1 }} /></label>
                 <label style={row}>decoys <input value={decoys} placeholder="行く, 寝る" onChange={e => setDecoys(e.target.value)} style={{ flex: 1 }} /></label>
-            </> : <label style={row}>target <input value={targetText(d.target)} placeholder="あ" onChange={e => setD({ ...d, target: e.target.value })} style={{ width: 80 }} /></label>}
+            </> : <label style={row}>target <select value={targetText(d.target)} onChange={e => setD({ ...d, target: e.target.value })}>
+                <option value="">(none)</option>
+                {KANA_ROWS.map(r => <optgroup key={r[0]} label={`${r[0]} row`}>{r.map(k => <option key={k} value={k}>{k} ({KANA_ROMAJI[k]})</option>)}</optgroup>)}
+                {targetText(d.target) && !KANA_ROWS.flat().includes(targetText(d.target)) && <option value={targetText(d.target)}>{targetText(d.target)}</option>}
+            </select></label>} {/* target: **free text** -> **select of KANA_ROWS**, reason: pick the kana instead of typing it, mechanism: one optgroup per row with romaji; a saved target outside the rows is kept as an extra option */}
             {d.quest_type !== 'dodge' && !matching && <span style={{ color: '#a60' }}>Only dodge and matching quests run in this demo.</span>}
             <div style={row}><button onClick={save} disabled={!d.title}>{quest ? 'Save quest' : 'Create quest + assign'}</button>{msg && <span>{msg}</span>}</div>
         </div>

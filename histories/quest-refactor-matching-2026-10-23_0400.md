@@ -45,3 +45,7 @@
 
 ## Follow-up: level is a selector
 - QuestForm's level is a `<select>` of `LEVELS`, now issue #7's list (vocab, koSoADo, particles, basicPhrases; final left out), plus (none). A saved level outside the list (old `meaning`) shows as an extra option. Checked in /IslandEditor (nothing saved).
+
+## Follow-up: kana target is a selector
+- QuestForm's kana target (dodge and the other kana types) is a `<select>` of KANA_ROWS (あ / か / さ / た rows as optgroups, each kana with romaji) plus (none); a saved target outside the rows shows as an extra option. Door's answer / decoys and matching's group are unchanged. Checked in /IslandEditor (nothing saved). Not committed.
+- Level koSoADo also shows the group target (Demonstrative pronouns: これ, それ, あれ, どれ / Pre-noun adjectivals / Adverbs / Adjectival nouns), and picking it switches a dodge type to matching (a dodge quest with a { group } target would train あ). Group names capitalized in kosoado.ts. Checked in /IslandEditor (nothing saved). Not committed.

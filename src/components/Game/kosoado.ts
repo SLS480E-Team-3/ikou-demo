@@ -7,7 +7,7 @@ export type KosoadoWord = { word: string, romaji: string, en: string }
 
 export const KOSOADO: Record<KosoadoGroup, { name: string, words: KosoadoWord[] }> = {
     pronoun: {
-        name: 'demonstrative pronouns',
+        name: 'Demonstrative pronouns',
         words: [
             { word: 'これ', romaji: 'kore', en: 'this (one)' },
             { word: 'それ', romaji: 'sore', en: 'that (by you)' },
@@ -16,7 +16,7 @@ export const KOSOADO: Record<KosoadoGroup, { name: string, words: KosoadoWord[] 
         ],
     },
     adnominal: {
-        name: 'pre-noun adjectivals',
+        name: 'Pre-noun adjectivals',
         words: [
             { word: 'この', romaji: 'kono', en: 'this ~' },
             { word: 'その', romaji: 'sono', en: 'that ~ (by you)' },
@@ -25,7 +25,7 @@ export const KOSOADO: Record<KosoadoGroup, { name: string, words: KosoadoWord[] 
         ],
     },
     adverb: {
-        name: 'adverbs',
+        name: 'Adverbs',
         words: [
             { word: 'こう', romaji: 'kou', en: 'like this' },
             { word: 'そう', romaji: 'sou', en: 'like that (by you)' },
@@ -34,7 +34,7 @@ export const KOSOADO: Record<KosoadoGroup, { name: string, words: KosoadoWord[] 
         ],
     },
     naAdjective: {
-        name: 'adjectival nouns',
+        name: 'Adjectival nouns',
         words: [
             { word: 'こんな', romaji: 'konna', en: 'this kind of' },
             { word: 'そんな', romaji: 'sonna', en: 'that kind of (by you)' },
