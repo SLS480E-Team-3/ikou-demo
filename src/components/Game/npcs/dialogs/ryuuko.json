@@ -205,6 +205,27 @@
       ]
     },
     {
+      "condition": "ib-intro",
+      "choices": [
+        ["はい", "Yes"],
+        ["いいえ", "No"]
+      ],
+      "lines": [
+        {
+          "kana": "ただしいところにたって！",
+          "text": "正しいところに立って！",
+          "en": "Stand where your word fits!",
+          "style": "confident trainer, explaining the rule with a challenge in her voice"
+        },
+        {
+          "kana": "じゅんびはできてる？",
+          "text": "準備はできてる？",
+          "en": "Ready?",
+          "style": "confident trainer, a teasing challenge before the drill starts"
+        }
+      ]
+    },
+    {
       "condition": "mt-correct",
       "lines": [
         {

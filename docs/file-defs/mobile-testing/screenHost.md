@@ -30,7 +30,7 @@ Reads `?island` (int, default 1), `?ver` (saved island version for GameScene; mi
 
 ### `SCREENS` (module const)
 
-`Record<ScreenType, ComponentType<ScreenProps>>`; each value is `next/dynamic(..., { ssr: false })`. Quest and island entries adapt `ScreenProps` to the component's own props; form pages take none. `QuestMatching` (issue #8) loads `MatchingQuestIsland` the same way as `QuestDodge`.
+`Record<ScreenType, ComponentType<ScreenProps>>`; each value is `next/dynamic(..., { ssr: false })`. Quest and island entries adapt `ScreenProps` to the component's own props; form pages take none. `QuestMatching` (issue #8) loads `MatchingQuestIsland` the same way as `QuestDodge`; `QuestInBetween` (issue #12) loads `InBetweenQuestIsland` the same way.
 
 ### `Tint`
 

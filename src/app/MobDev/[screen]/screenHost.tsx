@@ -29,6 +29,11 @@ const SCREENS: Record<ScreenType, ComponentType<ScreenProps>> = {
         return ({ sensitivity, group, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C group={isKosoadoGroup(group) ? group : undefined} sensitivity={sensitivity} onLeave={onLeave} /></>
     }), { ssr: false }), // group: **none (これ group)** -> **?group=pronoun|adnominal|adverb|naAdjective**, mechanism: a bad or missing value falls back to pronoun
     // QuestMatching: the matching quest prototype (issue #8), same adapter as QuestDodge
+    QuestInBetween: dynamic(() => Promise.all([import("@/components/Game/Scene/inBetweenQuestIsland"), import("@/components/Game/Entity/dialogBubble")]).then(([m, { BUBBLE_BG }]) => {
+        const C = m.InBetweenQuestIsland
+        return ({ sensitivity, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C sensitivity={sensitivity} onLeave={onLeave} /></>
+    }), { ssr: false }),
+    // QuestInBetween: the in-between test quest (issue #12, 私は＿さかながすき), same adapter as QuestDodge
     SignUp: dynamic(() => import("@/app/SignUp/page"), { ssr: false }),
     LogIn: dynamic(() => import("@/app/LogIn/page"), { ssr: false }),
     InfoRecovery: dynamic(() => import("@/app/InfoRecovery/page"), { ssr: false }),
