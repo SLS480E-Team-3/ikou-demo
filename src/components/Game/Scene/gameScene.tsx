@@ -774,6 +774,9 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
             // rescales it by dt so a 120Hz or laggy screen follows at the same
             // speed (closing 0.4 twice at 120Hz would overshoot 60Hz's 0.4)
 
+            const fitZoom = sceneSizeRef.current.w / bg.w
+            if (zoomTarget.current < fitZoom) zoomTarget.current = Math.min(fitZoom, ZOOM_MAX)
+            // zoom-out floor: **ZOOM_MIN only** -> **+ world width fills the screen**, reason: on a wide desktop window zooming out showed past the island's sides, mechanism: the target can't go below screen w / world w, so the farthest zoom-out is the island edge to edge; a phone's fitZoom (~0.28) is under ZOOM_MIN, so phones are unchanged
             const zoomFollow = 1 - Math.pow(1 - ZOOM_EASE_RATE, dt * 60)
             zoomRef.current += (zoomTarget.current - zoomRef.current) * zoomFollow
             // eases the drawn zoom toward the target the same dt-corrected way
