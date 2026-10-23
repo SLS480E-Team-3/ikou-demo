@@ -41,10 +41,9 @@ const AREA_H = 90
 const AREA_GAP = 8
 const AREA_DROP = 90
 const AREA_FRAME = 4
-const AREA_ALPHA = 0.55
+const AREA_ALPHA = 1 // opacity: **0.55** -> **1**, mechanism: solid areas; zIndex 0 still keeps them under the player and Ryuuko
 // the three areas: size, gap between them, how far below Ryuuko's center
-// their top edge sits, frame width, and fill opacity (so the floor and the
-// player's footprints still show through). 3 x 72 + 2 x 8 = 232 px, inside
+// their top edge sits, frame width, and fill opacity. 3 x 72 + 2 x 8 = 232 px, inside
 // the ~250 world px a 375 px phone shows at ZOOM_DEF 1.5
 
 export const PLAYER_GAP = 50
