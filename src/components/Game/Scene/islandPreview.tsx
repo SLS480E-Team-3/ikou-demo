@@ -17,20 +17,24 @@ import { useTileWalk } from "@/components/Game/islands/tiles"
 // MobileTester's 'game scene' page, moved here so /MobDev/GameScene?island=N can show it
 // full-screen on a phone too
 
-type Saved = { island: number, ver: number, file: IslandFile | null, quests: LayoutQuest[] }
+type Saved = { island: number, ver: number, file: IslandFile | null, quests: LayoutQuest[], error?: string } // type: **+ error**, mechanism: the first failed editor API request, shown under the island number
 // what loadSaved found for one island: file null = no saved version (or
-// ?ver=0), so the code's map plays
+// ?ver=0, or a failed load), so the code's map plays
 
 const loadSaved = async (island: number, ver?: number): Promise<Saved> => {
-    const get = (url: string): Promise<{ versions?: number[], quests?: LayoutQuest[], file?: IslandFile }> => fetch(url).then(r => r.ok ? r.json() : {}).catch(() => ({}))
-    const [{ versions = [] }, { quests = [] }] = await Promise.all([get(`/api/IslandEditor?island=${island}`), get(`/api/IslandEditor/quests?island=${island}`)])
+    let error: string | undefined
+    const get = (url: string, what: string): Promise<{ versions?: number[], quests?: LayoutQuest[], file?: IslandFile }> => fetch(url)
+        .then(r => { if (r.ok) return r.json(); error ??= `${what}: HTTP ${r.status}`; return {} })
+        .catch(() => { error ??= `${what}: network error`; return {} }) // get: **any failure = {}** -> **{} and the first failure kept in error**, reason: on Vercel the API 500'd and the code map showed as if nothing was saved, mechanism: the label shows error instead
+    const [{ versions = [] }, { quests = [] }] = await Promise.all([get(`/api/IslandEditor?island=${island}`, 'versions'), get(`/api/IslandEditor/quests?island=${island}`, 'quests')])
     const v = ver ?? versions[versions.length - 1] ?? 0
-    const { file = null } = v ? await get(`/api/IslandEditor?island=${island}&ver=${v}`) : {}
-    return { island, ver: file ? v : 0, file, quests }
+    const { file = null } = v ? await get(`/api/IslandEditor?island=${island}&ver=${v}`, `${island}_ver${v}.json`) : {}
+    return { island, ver: file ? v : 0, file, quests, error }
 }
 // the island's saved version through the editor's API (both DEV): the
 // asked ver, else the newest. Quests come along for the NPCs' and tiles'
-// quest ids. Any failed request just means "nothing saved"
+// quest ids. A failed request still falls back (no file = the code's map,
+// no quests = NPCs just talk), but its error is kept for the label
 
 export default function IslandPreview({ sensitivity, start = 1, tint = false, ver }: { sensitivity?: number, start?: number, tint?: boolean, ver?: number }) { // props: **+ ver**, mechanism: ?ver=N opens that saved version of the start island (0 = the code's map); left out = the newest // props: **sensitivity, start** -> **+ tint**, reason: the page color around the scene stayed on the first island after next ▶, mechanism: tint is drawn here, where the current island is known // props: **sensitivity** -> **+ start, sensitivity optional**, mechanism: /MobDev/GameScene?island=N opens on island N; GameScene falls back to SENSITIVITY_DEF // props: **sensitivity** -> **+ start, sensitivity optional**, mechanism: /MobDev/GameScene?island=N opens on island N; GameScene falls back to SENSITIVITY_DEF
     const [island, setIsland] = useState(Math.min(ISLAND_COUNT, Math.max(1, start))) // initial: **1** -> **start, clamped to 1..ISLAND_COUNT**, mechanism: a bad ?island= still opens a real island
@@ -77,7 +81,7 @@ export default function IslandPreview({ sensitivity, start = 1, tint = false, ve
     const islandButtons = (
         <div style={{ position: 'absolute', bottom: 'calc(var(--safe-bottom) + 80px)', left: 16, right: 16, zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', pointerEvents: 'none' }}>
             <button style={{ ...btn, pointerEvents: 'auto' }} disabled={island <= 1} onClick={() => setIsland(i => Math.max(1, i - 1))}>◀ prev</button>
-            <span style={{ textAlign: 'center' }}>island {island}<br /><small>{!loaded ? 'loading…' : loaded.file ? `${island}_ver${loaded.ver}.json` : 'code (islands.ts)'}</small></span>
+            <span style={{ textAlign: 'center' }}>island {island}<br /><small>{!loaded ? 'loading…' : loaded.file ? `${island}_ver${loaded.ver}.json` : 'code (islands.ts)'}</small>{loaded?.error && <><br /><small style={{ color: '#c8302a' }}>load failed ({loaded.error})</small></>}</span> {/* label: **file or code** -> **+ load failed (...) in red**, mechanism: shown when loadSaved kept an error, under whichever version is playing */}
             <button style={{ ...btn, pointerEvents: 'auto' }} disabled={island >= ISLAND_COUNT} onClick={() => setIsland(i => Math.min(ISLAND_COUNT, i + 1))}>next ▶</button>
         </div>
     )
