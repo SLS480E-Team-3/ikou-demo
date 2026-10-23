@@ -4,7 +4,7 @@
 
 A Japanese-learning web app for English speakers who are just starting to learn Japanese. Built for SLS480E Team 3.
 
-- **Primary platform: mobile web.** Design and build mobile-first — that's the main target for v1.
+- **Primary platform: mobile web, played as a Home Screen app.** Design and build mobile-first — that's the main target for v1. The game is added to the iPhone Home Screen and launched full screen (no Safari bars); see [docs/home-screen-app.md](docs/home-screen-app.md) for the setup and the layout rules (safe-area insets, no edge-touching fixed elements).
 - **Secondary platform: laptop/desktop web.** Comes later, as a responsive extension of the mobile experience, not a separate build.
 - **Audience: absolute beginners.** English speakers with little to no prior Japanese. Favor plain language, romaji/furigana support, and gentle onboarding over assuming any existing kana/kanji literacy.
 
