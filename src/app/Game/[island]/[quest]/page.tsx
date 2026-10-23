@@ -17,9 +17,11 @@ export default async function QuestPage({ // name: **QuestScene** -> **QuestPage
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/LogIn')
 
-    const { data: row } = await supabase.from('quests')
-        .select('id, island_id, title, reward_points, kana').eq('id', questId).maybeSingle() // select: **no kana** -> **+ kana**, mechanism: the training targets this quest's kana
-    if (!row) notFound()
+    const { data: full } = await supabase.from('quests')
+        .select('*').eq('id', questId).maybeSingle() // select: **id, island_id, title, reward_points, kana** -> **\***, mechanism: + quest_type / target from /IslandEditor when those columns exist
+    if (!full) notFound()
+    const row = { id: full.id as number, island_id: full.island_id as number, title: full.title as string, reward_points: full.reward_points as number, kana: (typeof full.target === 'string' && full.target ? full.target : full.kana ?? null) as string | null }
+    // kana: a string target set in the editor wins over the older kana column
     if (row.island_id !== islandId) redirect(`/Game/${row.island_id}/${row.id}`)
     // loads this one quest only -- the reason quests get their own route.
     // A quest opened under the wrong island (edited URL) is sent to its
@@ -43,6 +45,9 @@ export default async function QuestPage({ // name: **QuestScene** -> **QuestPage
     // user_quests has no write policies; the read goes back through RLS
 
     const questType = islandQuestType(islandId)
+    // quests.quest_type (set in /IslandEditor) is not read here yet: this
+    // demo only has the dodge quest, so every quest runs (and saves its
+    // tutorial row) as dodge
     const { data: tutorial } = await supabase.from('user_tutorials')
         .select('quest_type').eq('user_id', user.id).eq('quest_type', questType).maybeSingle() // quest_type: **'original'** -> **islandQuestType(islandId)**, mechanism: island 2 runs the dodge quest, so its tutorial row is 'dodge'
     // has Hiroko already asked this player about this quest type's tutorial?

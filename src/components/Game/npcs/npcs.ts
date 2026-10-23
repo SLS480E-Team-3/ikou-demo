@@ -2,7 +2,7 @@ import { NPCProps } from "../Entity/npcRenderer";
 import type { Condition } from "../Entity/dialogBubble"; // import: **Dialog** -> **type Condition**, mechanism: the Dialogs are built in toNPCProps.ts now; this file only names the Quest Island scene's condition
 import { playSpot, throwSpot, type TrainingPhase } from "../Scene/training"; // import: **+ LEVELS, QuestsLevel, ENT_W / ENT_H (entityRenderer)** -> **without**, mechanism: the level buttons are in ryuuko.json and the body size is set by toNPCProps
 import { KANA_ROWS } from "../kana";
-import { sceneDialog, toNPCProps } from "./toNPCProps";
+import { sceneDialog, toNPCProps, type NpcScript } from "./toNPCProps";
 import jordi from "./dialogs/jordi.json";
 import shuto from "./dialogs/shuto.json";
 import tiffany from "./dialogs/tiffany.json";
@@ -18,7 +18,11 @@ type Line = [ja: string, en: string, audio?: string] // Line: **[ja, en]** -> **
 // say() / ask() / npc(): **here** -> **removed**, mechanism: toDialogs / toNPCProps (toNPCProps.ts) build the same Dialog and NPCProps from the json; Line stays for QUEST_LINE
 
 //npcs in island 1
-export const ISLAND_1_NPC: NPCProps[] = [jordi, shuto, tiffany, genki, sarah].map(s => toNPCProps(s)) // list: **five hand-written npc(...) entries** -> **the five json files through toNPCProps**, mechanism: same name / voice / color / kana / Dialogs, in the same order (Jordi, Shuto, Tiffany, Genki, Sarah); x / y are 0 here because placeNpcs gives every island NPC its spot
+export const NPC_SCRIPTS: Record<string, NpcScript> = { jordi, shuto, tiffany, genki, sarah }
+// the island NPCs by their json key, the npcs/ folder of /IslandEditor's
+// asset box and what a saved island's FileNpc.npc points at
+
+export const ISLAND_1_NPC: NPCProps[] = Object.values(NPC_SCRIPTS).map(s => toNPCProps(s)) // list: **[jordi, shuto, tiffany, genki, sarah].map** -> **Object.values(NPC_SCRIPTS).map**, mechanism: same five in the same order, now also looked up by key // list: **five hand-written npc(...) entries** -> **the five json files through toNPCProps**, mechanism: same name / voice / color / kana / Dialogs, in the same order (Jordi, Shuto, Tiffany, Genki, Sarah); x / y are 0 here because placeNpcs gives every island NPC its spot
 // five NPCs around the spawn (world center 3500, 5000), each talking about
 // a favorite food. Spots are fixed, not random, so server and client render
 // the same places (no hydration mismatch), and all sit below y 5000, clear of
@@ -50,11 +54,9 @@ const QUEST_LINE: Record<string, (k: string) => Line> = {
 const list = (v?: string | string[]): string[] => v === undefined ? [] : Array.isArray(v) ? v : [v]
 // a Dialog's jp / en / audio as an array (they may be a single string)
 
-export const npcsForRow = (npcs: NPCProps[], row: number): NPCProps[] => npcs.map(n => {
-    const col = KANA_ROWS[0].indexOf(n.kana ?? '')
-    const kana = KANA_ROWS[row]?.[col]
+export const withQuestLine = (n: NPCProps, kana: string): NPCProps => {
     const line = n.voice ? QUEST_LINE[n.voice] : undefined
-    if (!kana || !line) return n
+    if (!line) return { ...n, kana }
     const [ja, en, audio] = line(kana)
     return {
         ...n, kana,
@@ -62,7 +64,17 @@ export const npcsForRow = (npcs: NPCProps[], row: number): NPCProps[] => npcs.ma
             ? { ...d, jp: [ja, ...list(d.jp).slice(1)], en: [en, ...list(d.en).slice(1)], audio: [audio ?? '', ...list(d.audio).slice(1)] }
             : d),
     }
-})
+}
+// sets an NPC's kana and swaps the first line of its quest offer for
+// QUEST_LINE with that kana (the second line, e.g. 準備はいい？, stays). An
+// NPC without a template only gets the kana. Shared by npcsForRow and the
+// NPCs of a saved island (IslandScene), whose quest is picked in the editor
+
+export const npcsForRow = (npcs: NPCProps[], row: number): NPCProps[] => npcs.map(n => {
+    const col = KANA_ROWS[0].indexOf(n.kana ?? '')
+    const kana = KANA_ROWS[row]?.[col]
+    return kana && n.voice && QUEST_LINE[n.voice] ? withQuestLine(n, kana) : n
+}) // body: **inline line swap** -> **withQuestLine(n, kana)**, mechanism: the swap moved into withQuestLine so saved islands reuse it; same result
 // moves the island's NPCs to kana row `row`: each NPC's あ-row kana gives
 // its column, the kana becomes that column of the new row, and the quest
 // offer's first line is swapped for QUEST_LINE (the second line, e.g.

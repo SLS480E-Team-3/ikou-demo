@@ -1,0 +1,29 @@
+# editor UI
+
+- **Path:** `src/app/IslandEditor/page.tsx`, `src/components/IslandEditor/{islandEditor,canvas,assetBox,panels,phoneView,history,types}.ts(x)`
+- **Topic:** island-editor
+- **Purpose:** The `/IslandEditor` page (all files are DEV).
+
+## `page.tsx` → `IslandEditorPage`
+Loads `IslandEditor` with `next/dynamic` `ssr: false`. Not in the proxy matcher (no login).
+
+## `islandEditor.tsx` → `IslandEditor` (default)
+Owns all state: islands, versions, picked / opened ver, quests, uploaded sprites, selection, tool, phone toggle, zoom, status, and the island via `useHistory<IslandFile>`. `loadIsland(id, ver?)` opens a ver (newest by default; `0` = code). `save()` POSTs and switches to the new ver. `drop(tool, x, y)` places an asset's bottom-center at the click. `remove()` / `duplicate()` act on the selection. Shortcuts: ⌘Z, ⇧⌘Z / ⌘Y, ⌘D, ⌘S, ⌫, Esc (ignored while typing in a field).
+
+## `history.ts` → `useHistory(initial)`
+Whole-state undo / redo. `commit(next, key?)` = one step (same key within 800 ms merges, for typing). `begin()` + `live(next)` = one step for a drag. `reset(value)` clears history. Keeps 200 steps.
+
+## `canvas.tsx` → `EditorCanvas` (default), types `Selection`, `Tool`
+Draws the 1400×2000 world scaled by `zoom`: bands (dashed separator line), objects (by bottom edge; selected on top with a scale handle), NPCs (body + name + `Q<id>`). Ground click = drop the tool / deselect. Item pointerdown = select, then drag moves (undo step opens on the first move). The corner handle scales around the bottom-center.
+
+## `assetBox.tsx` → `AssetBox` (default)
+`asset box/` → `npcs/` (NPC_SCRIPTS) and `objects/` (OBJECTS + uploaded). Click picks / unpicks the tool. `Upload`: file, key (from the file name), w / h (from the image), POST to `/api/IslandEditor/sprites`.
+
+## `panels.tsx` → `SelectionPanel`, `IslandPanel`
+`SelectionPanel`: object x / y / scale / sign, or NPC x / y / quest dropdown plus `QuestForm` (title, level, type, points, target: kana, or answer / decoys for door). Saves the quest to Supabase and assigns it. Duplicate / Delete buttons. `IslandPanel`: bg color, then sections (id, color, start, end, separator, solid, wave, reorder, delete, add).
+
+## `phoneView.tsx` → `PhoneView` (default)
+The real `GameScene` in a `MobileView` phone frame, built from the file (`fileBg`, `layoutNpcs`, `registerSprites`). Touch / mouse / WASD walk the player. はい on a quest offer only shows which quest would open.
+
+## `types.ts`
+`EditorQuest` (quests row), `QuestTarget` / `DoorTarget`, `QUEST_TYPES`, `LEVELS`.

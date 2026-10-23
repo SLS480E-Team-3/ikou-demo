@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation"
 import IslandScene, { type IslandSceneProps } from "@/components/Game/Scene/IslandScene"
 import { adminClient, serverClient } from "@/utils/supabase"
 import { firstIsland, homeIsland } from "@/utils/islands"
+import { latestIslandFile } from "@/utils/islandFiles" // imports: **none** -> **latestIslandFile**, mechanism: the island editor's newest saved version replaces the islands.ts map
 
 export default async function GameLevel({
     params,
@@ -48,10 +49,11 @@ export default async function GameLevel({
     // remembered for LogIn and '/', through the "users update own profile"
     // RLS policy
 
-    const { data: quests } = await supabase.from('quests')
-        .select('id, title, kana').eq('island_id', islandId).order('id') // select: **id, title** -> **+ kana**, mechanism: IslandScene gives each quest to the NPC with the same kana
+    const { data: rows } = await supabase.from('quests')
+        .select('*').eq('island_id', islandId).order('id') // select: **id, title, kana** -> **\***, mechanism: + target (the editor's quest column) when it exists; '*' also works before that column is added
+    const quests = (rows ?? []).map(q => ({ id: q.id as number, title: q.title as string, kana: (q.kana ?? null) as string | null, target: q.target }))
     const { data: mine } = await supabase.from('user_quests')
-        .select('quest_id, completed_at').in('quest_id', (quests ?? []).map(q => q.id))
+        .select('quest_id, completed_at').in('quest_id', quests.map(q => q.id))
     const status = new Map((mine ?? []).map(q => [q.quest_id, q.completed_at ? 'done' : 'resume']))
     // only this island's quest ids and titles, so the page stays small
     // however many quests exist; each quest's content loads on its own page.
@@ -61,7 +63,8 @@ export default async function GameLevel({
     const props: IslandSceneProps = {
         islandId,
         points: progress.current_points,
-        quests: (quests ?? []).map(q => ({ ...q, status: status.get(q.id) as 'done' | 'resume' | undefined })),
+        quests: quests.map(q => ({ ...q, status: status.get(q.id) as 'done' | 'resume' | undefined })),
+        layout: await latestIslandFile(islandId) ?? undefined, // layout: **none** -> **newest saved version**, mechanism: /IslandEditor's <island>_ver<N>.json with the highest N; none saved = the islands.ts map as before
     }
     return <IslandScene {...props} /> // render: **inline JSX** -> **<IslandScene>**, mechanism: the page stays a server component that only loads data; IslandScene ('use client') gets it as plain props and draws the scene and quest list
 }

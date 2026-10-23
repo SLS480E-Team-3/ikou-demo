@@ -25,3 +25,17 @@ insert into quests (island_id, title, reward_points, kana)
 select 3, t.title, (select reward_points from quests where island_id = 1 and kana = 'あ' limit 1), t.kana
 from (values ('Particle: に', 'に', 1), ('Particle: で', 'で', 2), ('Particles: に and で', 'mix', 3)) as t(title, kana, ord)
 order by t.ord;
+
+-- Island editor (Issue #1): quest columns + storage buckets
+-- level / quest_type / target are set per quest in /IslandEditor.
+-- target is a kana string for dodge ("あ") or {"answer": [...], "decoys": [...]} for door.
+alter table quests add column if not exists level text;
+alter table quests add column if not exists quest_type text;
+alter table quests add column if not exists target jsonb;
+
+-- island-editor: <island>_ver<N>.json files (private; the server reads them with the secret key)
+-- sprites: uploaded sprite images + index.json (public, so the game can load the images)
+insert into storage.buckets (id, name, public) values
+  ('island-editor', 'island-editor', false),
+  ('sprites', 'sprites', true)
+on conflict (id) do nothing;

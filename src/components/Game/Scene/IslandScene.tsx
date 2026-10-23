@@ -7,6 +7,8 @@ import { ISLAND_MAPS } from "../islands"
 import { ISLAND_NPCS } from "../npcs"
 import { npcsForRow } from "../npcs/npcs" // imports: **+ npcsForParticles, PARTICLE_STEPS** -> **npcsForRow**, mechanism: island 3 is not in the demo
 import { KANA_ROWS } from "../kana"
+import { fileBg, registerSprites, type IslandFile } from "../islands/islandFile" // imports: **none** -> **fileBg, registerSprites, IslandFile**, mechanism: a saved island from /IslandEditor
+import { layoutNpcs } from "../islands/layoutNpcs"
 // import { useEffect } from "react" // imports: **useEffect** -> **commented out**, mechanism: its only use, the island BGM, is commented out
 // import { ISLAND_BGM, playBgm } from "../Entity/voice" // music: **on** -> **commented out**, reason: BGM and quest clear / fail music turned off for now, mechanism: uncomment to bring it back
 // imports: **none** -> **useEffect, ISLAND_BGM, playBgm**, mechanism: the island's looping BGM starts with the scene
@@ -15,13 +17,16 @@ import { KANA_ROWS } from "../kana"
 export type IslandSceneProps = {
     islandId: number
     points: number
-    quests: { id: number, title: string, kana: string | null, status?: 'done' | 'resume' }[] // quest: **no kana** -> **+ kana**, mechanism: matched to NPCProps.kana
+    quests: { id: number, title: string, kana: string | null, target?: unknown, status?: 'done' | 'resume' }[] // quest: **no kana** -> **+ kana**, mechanism: matched to NPCProps.kana // quest: **+ target**, mechanism: a saved island's NPC names its quest's kana target
+    layout?: IslandFile
+    // the newest version saved in /IslandEditor; left out = the code's map,
+    // sections and kana-row NPCs
 }
 // everything the island page loaded, as plain data: the page (server) does
 // the Supabase work and hands this over, the scene (client) only renders.
 // status: 'done' = cleared, 'resume' = started and paused, none = not started
 
-export default function IslandScene({ islandId, points, quests }: IslandSceneProps) { // props: **{ islandId: number }** -> **IslandSceneProps**, mechanism: the page passes points and the quest list along with the id, so the scene can draw them without its own queries
+export default function IslandScene({ islandId, points, quests, layout }: IslandSceneProps) { // props: **+ layout**, mechanism: a saved island replaces the code's map // props: **{ islandId: number }** -> **IslandSceneProps**, mechanism: the page passes points and the quest list along with the id, so the scene can draw them without its own queries
     const router = useRouter()
     // useEffect(() => {
     //     const url = ISLAND_BGM[islandId]
@@ -36,7 +41,9 @@ export default function IslandScene({ islandId, points, quests }: IslandScenePro
     // open only once all of あ–お are cleared. With every row done the last
     // row stays, where each quest is done and no NPC offers one
     const base = npcsForRow(ISLAND_NPCS[islandId] ?? [], row)
-    const npcs = base.map(n => { // source: **npcsForRow(...)** -> **base**, mechanism: island 3 uses npcsForParticles instead // npcs: **ISLAND_NPCS[islandId]** -> **npcsForRow(..., row)**, mechanism: each NPC's kana and quest line follow the current row, then the kana -> quest match below is unchanged
+    if (layout) registerSprites(layout.sprites)
+    // uploaded sprites join the object catalog before GameScene looks them up
+    const npcs = layout ? layoutNpcs(layout.npcs, quests) : base.map(n => { // npcs: **kana-row NPCs** -> **the saved NPCs when there is a layout**, mechanism: each saved NPC carries the quest id picked in the editor // source: **npcsForRow(...)** -> **base**, mechanism: island 3 uses npcsForParticles instead // npcs: **ISLAND_NPCS[islandId]** -> **npcsForRow(..., row)**, mechanism: each NPC's kana and quest line follow the current row, then the kana -> quest match below is unchanged
         const quest = quests.find(q => q.kana && q.kana === n.kana)
         return quest ? { ...n, quest } : { ...n, dialog: n.dialog?.filter(d => d.condition !== 'quest') }
     })
@@ -46,7 +53,7 @@ export default function IslandScene({ islandId, points, quests }: IslandScenePro
     // entry, so it talks normally even though onQuest is always set
     return (
         <div style={{ position: 'relative', width: '100%', height: '100lvh' }} data-island={islandId}> {/* wrapper: **<div>** -> **relative 100lvh div**, mechanism: GameScene fills 100% of its parent, so this box gives it the full screen height (lvh reaches under the mobile browser's floating URL bar), and position relative anchors the absolute quest list below */}
-            <GameScene key={islandId} bgProps={islandBg(islandId)} objects={ISLAND_MAPS[islandId] ?? []} npcs={npcs} onQuest={i => { const q = npcs[i]?.quest; if (q) router.push(`/Game/${islandId}/${q.id}`) }} /> {/* onQuest: **island's first uncleared quest** -> **the talking NPC's quest**, mechanism: GameScene passes the NPC index, its quest id picks the URL */} {/* props: **no onQuest** -> **onQuest**, mechanism: はい pushes the same URL the quest links use, so the quest page's guards still apply */} {/* props: **no key, default bg** -> **key={islandId}, bgProps={islandBg(islandId)}**, mechanism: GameScene reads bgProps/player once at mount, so the key remounts it per island; islandBg swaps in that island's color */} {/* props: **objects** -> **+ npcs**, mechanism: island 1 gets ISLAND_1_NPC (5 food-talk NPCs); an island without an entry gets none */} {/* props: **none** -> **objects**, mechanism: looks the island's map file up by id; an island without one gets an empty field */}
+            <GameScene key={islandId} tintEdges bgProps={layout ? fileBg(layout) : islandBg(islandId)} objects={layout?.objects ?? ISLAND_MAPS[islandId] ?? []} npcs={npcs} onQuest={i => { const q = npcs[i]?.quest; if (q) router.push(`/Game/${islandId}/${q.id}`) }} /> {/* onQuest: **island's first uncleared quest** -> **the talking NPC's quest**, mechanism: GameScene passes the NPC index, its quest id picks the URL */} {/* props: **no onQuest** -> **onQuest**, mechanism: はい pushes the same URL the quest links use, so the quest page's guards still apply */} {/* props: **no key, default bg** -> **key={islandId}, bgProps={islandBg(islandId)}**, mechanism: GameScene reads bgProps/player once at mount, so the key remounts it per island; islandBg swaps in that island's color */} {/* props: **objects** -> **+ npcs**, mechanism: island 1 gets ISLAND_1_NPC (5 food-talk NPCs); an island without an entry gets none */} {/* props: **none** -> **objects**, mechanism: looks the island's map file up by id; an island without one gets an empty field */} {/* tintEdges: **none** -> **on**, reason: Safari's top / bottom strips kept their load-time color while the camera moved, mechanism: GameScene's edge bars follow the ground at the screen edges */}
             <div style={{ position: 'absolute', top: 16, left: 16, zIndex: 2, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div>points: {points}</div>
                 {quests.map(q => (

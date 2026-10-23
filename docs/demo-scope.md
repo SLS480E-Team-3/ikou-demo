@@ -22,5 +22,5 @@ This repo is a bare-minimum copy of `../ikko`, made 2026-10-22.
 - `QuestType` in `tutorial.ts` and the `tut-*` dialog conditions still list the other types (harmless, unused).
 
 ## Notes
-- `.env` is copied from `../ikko`, so the demo uses the **same Supabase project**. If its `islands` table has 2–5 unlocked, `/Game/2` etc. still load, with an empty map.
+- Since 2026-10-22 the demo has **its own Supabase project** (`mgwosxdeykucuzrpfchn`), separate from ikko's. A fresh project is set up by running `docs/supabase-setup.sql` (the whole schema in order: tables, RLS, signup trigger, login lookup, seed quests, tutorials, island-editor columns and buckets). `.env` needs that project's `SUPABASE_SECRET_KEY`.
 - Unused assets in `public/` (other islands' sprites, verb/particle voice lines) could be pruned later.

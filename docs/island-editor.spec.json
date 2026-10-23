@@ -302,6 +302,18 @@
   "assumptions": [
     {
       "statement": "Saving always creates a new ver file; older versions are kept."
+    },
+    {
+      "statement": "Sprite upload asks for a key (a-z, 0-9, -), prefilled from the file name, and a world size w / h, prefilled from the image's own size; uploaded sprites have no hitbox."
+    },
+    {
+      "statement": "The repo copy of an uploaded sprite (public/img/uploads/) is written only when the editor runs under npm run dev; on Vercel the upload goes to the Supabase sprites bucket only."
+    },
+    {
+      "statement": "Sections also carry optional solid and wave flags, so a saved island 1 keeps its blocking, moving ocean."
+    },
+    {
+      "statement": "The game reads each quest's target (kana) but still runs every quest as dodge, the only quest in this demo."
     }
   ],
   "openQuestions": [
