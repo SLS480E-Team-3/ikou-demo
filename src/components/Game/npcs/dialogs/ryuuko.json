@@ -226,6 +226,27 @@
       ]
     },
     {
+      "condition": "br-intro",
+      "choices": [
+        ["はい", "Yes"],
+        ["いいえ", "No"]
+      ],
+      "lines": [
+        {
+          "kana": "ただしいほうにはしをかけて！",
+          "text": "正しい方に橋をかけて！",
+          "en": "Draw a bridge to the right meaning!",
+          "style": "confident trainer, explaining the rule with a challenge in her voice"
+        },
+        {
+          "kana": "じゅんびはできてる？",
+          "text": "準備はできてる？",
+          "en": "Ready?",
+          "style": "confident trainer, a teasing challenge before the drill starts"
+        }
+      ]
+    },
+    {
       "condition": "mt-correct",
       "lines": [
         {

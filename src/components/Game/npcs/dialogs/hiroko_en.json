@@ -482,6 +482,76 @@
           "style": "calm, warm, clear"
         }
       ]
+    },
+    {
+      "condition": "tut-bridge-touch",
+      "lines": [
+        {
+          "text": "Ryuuko gives you a Japanese word.",
+          "en": "Ryuuko gives you a Japanese word.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Three areas with English meanings wait across the spikes.",
+          "en": "Three areas with English meanings wait across the spikes.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Draw a line from yourself to the right meaning before the timer runs out. You walk it as a bridge.",
+          "en": "Draw a line from yourself to the right meaning before the timer runs out. You walk it as a bridge.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Pick the wrong one and the bridge breaks. You start over next to Ryuuko.",
+          "en": "Pick the wrong one and the bridge breaks. You start over next to Ryuuko.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Draw with your finger. Pinch to zoom.",
+          "en": "Draw with your finger. Pinch to zoom.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Talk to Ryuuko when you are ready.",
+          "en": "Talk to Ryuuko when you are ready.",
+          "style": "calm, warm, clear"
+        }
+      ]
+    },
+    {
+      "condition": "tut-bridge-keys",
+      "lines": [
+        {
+          "text": "Ryuuko gives you a Japanese word.",
+          "en": "Ryuuko gives you a Japanese word.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Three areas with English meanings wait across the spikes.",
+          "en": "Three areas with English meanings wait across the spikes.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Draw a line from yourself to the right meaning before the timer runs out. You walk it as a bridge.",
+          "en": "Draw a line from yourself to the right meaning before the timer runs out. You walk it as a bridge.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Pick the wrong one and the bridge breaks. You start over next to Ryuuko.",
+          "en": "Pick the wrong one and the bridge breaks. You start over next to Ryuuko.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Draw with the mouse. Scroll to zoom.",
+          "en": "Draw with the mouse. Scroll to zoom.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Talk to Ryuuko when you are ready.",
+          "en": "Talk to Ryuuko when you are ready.",
+          "style": "calm, warm, clear"
+        }
+      ]
     }
   ]
 }

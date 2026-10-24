@@ -17,10 +17,10 @@ Every quest type has a tutorial, given in dialog only by **Hiroko**. She stands 
 
 | What | Where |
 |---|---|
-| Lines | `src/components/Game/npcs/dialogs/hiroko_en.json`: `tut-ask`, `tut-bye`, `tut-<original\|dodge\|shoot\|door\|particle\|matching\|inbetween>-<touch\|keys>` |
+| Lines | `src/components/Game/npcs/dialogs/hiroko_en.json`: `tut-ask`, `tut-bye`, `tut-<original\|dodge\|shoot\|door\|particle\|matching\|inbetween\|bridge>-<touch\|keys>` |
 | Voice | `hiroko_en` in `python/voices.json`, an English copy of `hiroko`; mp3s in `public/dialog/hiroko_en/` |
 | Logic | `src/components/Game/Scene/tutorial.ts`: `useTutorial(type, active, props)` and `useMergedTalk(...)` |
-| Islands | `questIsland.tsx` (original), `dodgeQuestIsland.tsx`, `shootQuestIsland.tsx`, `leftRightQuestIsland.tsx` (door), `matchingQuestIsland.tsx`, `inBetweenQuestIsland.tsx`: optional `tutorial` prop |
+| Islands | `questIsland.tsx` (original), `dodgeQuestIsland.tsx`, `shootQuestIsland.tsx`, `leftRightQuestIsland.tsx` (door), `matchingQuestIsland.tsx`, `inBetweenQuestIsland.tsx`, `bridgeQuestIsland.tsx` (Hiroko stands left of Ryuuko there): optional `tutorial` prop |
 | Seen flag | Supabase `user_tutorials (user_id, quest_type, seen_at)`, SQL in [SQL-query.md](SQL-query.md); written by `POST /api/Tutorial { type }`, read by the quest page |
 
 ## How it works

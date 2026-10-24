@@ -33,6 +33,11 @@ const SCREENS: Record<ScreenType, ComponentType<ScreenProps>> = {
         const C = m.InBetweenQuestIsland
         return ({ sensitivity, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C sensitivity={sensitivity} onLeave={onLeave} /></>
     }), { ssr: false }),
+    QuestBridge: dynamic(() => Promise.all([import("@/components/Game/Scene/bridgeQuestIsland"), import("@/components/Game/Entity/dialogBubble")]).then(([m, { BUBBLE_BG }]) => {
+        const C = m.BridgeQuestIsland
+        return ({ sensitivity, group, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C group={isKosoadoGroup(group) ? group : undefined} sensitivity={sensitivity} onLeave={onLeave} /></>
+    }), { ssr: false }),
+    // QuestBridge: the bridge quest (draw a bridge over the spikes to the right meaning), ?group= like QuestMatching
     // QuestInBetween: the in-between test quest (issue #12, 私は＿さかながすき), same adapter as QuestDodge
     SignUp: dynamic(() => import("@/app/SignUp/page"), { ssr: false }),
     LogIn: dynamic(() => import("@/app/LogIn/page"), { ssr: false }),
