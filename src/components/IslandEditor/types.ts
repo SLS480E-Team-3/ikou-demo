@@ -17,6 +17,7 @@ export type EditorQuest = {
     level?: string | null,
     quest_type?: QuestKind | null,
     target?: QuestTarget | null,
+    timer_ms?: number | null, // timer_ms: **+**, reason: shorter timers for harder quests, mechanism: the matching / in-between pick timer in ms; null = the quest's default
 }
 // one quests row as the editor reads and writes it (snake_case = the db
 // columns). id left out = not created yet

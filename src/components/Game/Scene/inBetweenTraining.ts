@@ -21,12 +21,13 @@ export type IbPhase = 'intro' | 'play' | 'success' | 'again'
 // same phases as the matching quest: Ryuuko's rules talk, the run, success
 // (Ryuuko, then Elena), and 'again' for her replay offer
 
-export type IbQuestion = { before: string, word: string, after: string, romaji: string, en: string }
+export type IbQuestion = { before: string, word: string, after: string, romaji: string, en: string, enWord: string } // fields: **+ enWord**, reason: the card marks the target word in red, mechanism: the part of en that translates word
 export const IB_QUESTIONS: IbQuestion[] = [
-    { before: '私は', word: 'この', after: 'さかながすき', romaji: 'watashi wa kono sakana ga suki', en: 'I like this fish' },
+    { before: '私は', word: 'この', after: 'さかながすき', romaji: 'watashi wa kono sakana ga suki', en: 'I like this fish', enWord: 'this' },
 ]
 // the test quest's sentences: the full sentence is before + word + after, the
-// floor shows before + after and the player carries word. Only the issue's
+// floor shows before + after and the player carries word. en is the English
+// sentence, enWord its part for word (red on the card). Only the issue's
 // example for now
 
 const charsOf = (q: IbQuestion) => [...Array.from(q.before), ...Array.from(q.after)]
@@ -75,8 +76,12 @@ type RunLine = 'mt-correct' | 'mt-wrong'
 const lineOf = (cond: RunLine) => toDialogs(ryuuko).find(d => d.condition === cond)
 // Ryuuko's verdicts are the matching quest's lines
 
-export function useInBetweenTraining({ w, h, onLeave, questions = IB_QUESTIONS }: { w: number, h: number, onLeave?: () => void, questions?: IbQuestion[] }) {
+export function useInBetweenTraining({ w, h, onLeave, questions = IB_QUESTIONS, timerMs = TIMER_MS }: { w: number, h: number, onLeave?: () => void, questions?: IbQuestion[], timerMs?: number }) { // args: **+ timerMs**, reason: shorter timers for harder quests, mechanism: replaces TIMER_MS (now the default) through timerRef
     const [phase, setPhaseState] = useState<IbPhase>('intro')
+    const timerRef = useRef(timerMs)
+    timerRef.current = timerMs
+    // the pick timer in ms, read through a ref so onTick / getHud (empty deps)
+    // see a new value without being rebuilt
     const phaseRef = useRef<IbPhase>('intro')
     const [talkRequest, setTalkRequest] = useState<{ npc: number, key: number } | undefined>(undefined)
     const [moveRequest, setMoveRequest] = useState<{ x: number, y: number, key: number } | undefined>(undefined)
@@ -146,7 +151,7 @@ export function useInBetweenTraining({ w, h, onLeave, questions = IB_QUESTIONS }
             if (since >= ASK_MS) setStep('pick')
             return
         }
-        if (step.current !== 'pick' || since < TIMER_MS) return
+        if (step.current !== 'pick' || since < timerRef.current) return
 
         const q = questionsRef.current[current.current]
         const { slots } = rowLayout(sizeRef.current.w, sizeRef.current.h, charsOf(q).length)
@@ -223,7 +228,7 @@ export function useInBetweenTraining({ w, h, onLeave, questions = IB_QUESTIONS }
 
     const getHud = useCallback((): TrainingHud => {
         const pick = phaseRef.current === 'play' && step.current === 'pick'
-        const left = pick ? Math.max(0, TIMER_MS - stepMs.current) : TIMER_MS
+        const left = pick ? Math.max(0, timerRef.current - stepMs.current) : timerRef.current
         const q = questionsRef.current[Math.min(current.current, questionsRef.current.length - 1)]
         return {
             target: q.word,
@@ -233,20 +238,20 @@ export function useInBetweenTraining({ w, h, onLeave, questions = IB_QUESTIONS }
             hp: 1,
             maxHP: 1,
             secondsLeft: Math.ceil(left / 1000),
-            timeFrac: left / TIMER_MS,
+            timeFrac: left / timerRef.current,
             playing: pick,
             hurtAt: hurtAt.current,
         }
     }, [])
     // the HUD snapshot: playing only while the timer runs, like the matching quest
 
-    const getSentence = useCallback((): { chars: string[], word: string } | undefined => {
+    const getSentence = useCallback((): { en: string, enWord: string, word: string } | undefined => { // card text: **the floor's characters** -> **the sentence's English**, reason: the card repeated the Japanese row, mechanism: q.en (I like this fish) instead of charsOf(q)
         if (phaseRef.current !== 'play') return undefined
         const q = questionsRef.current[Math.min(current.current, questionsRef.current.length - 1)]
-        return { chars: charsOf(q), word: q.word }
+        return { en: q.en, enWord: q.enWord, word: q.word }
     }, [])
-    // the floor's characters and the player's word for the shell's top card:
-    // the row is wider than a phone shows, so the whole sentence is read there
+    // the sentence's English and the player's word for the shell's top card,
+    // so the player knows what the floor row should say
 
     const playerLabel = useCallback((): string | undefined =>
         phaseRef.current === 'play' ? questionsRef.current[Math.min(current.current, questionsRef.current.length - 1)].word : undefined, [])

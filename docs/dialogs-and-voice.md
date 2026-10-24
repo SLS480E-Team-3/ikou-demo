@@ -150,7 +150,7 @@ Lines are not written in `npcs.ts`.
 | `lr-word` | — | Left or Right: read when a word appears, `{target}` = the verb (shown on the sign, not a bubble) |
 | `lr-correct` / `lr-wrong` | — | Left or Right: after a door (shown on the sign) |
 | `tut-ask` / `tut-bye` | — | Hiroko (quest tutorials): her first-time question (はい / いいえ) / the hand-off to Ryuuko |
-| `tut-<original\|dodge\|shoot\|door>-<touch\|keys>` | — | Hiroko: the tutorial for one quest type, touch (screen under 768 px) or keys |
+| `tut-<original\|dodge\|shoot\|door\|particle\|matching\|inbetween>-<touch\|keys>` | — | Hiroko: the tutorial for one quest type, touch (screen under 768 px) or keys |
 | `lr-clear` / `lr-fail` | — | Left or Right: 10 correct (`success`) / 0 HP (`fail`); Elena shares her level2-clear / fail lines |
 
 The Left or Right quest (`docs/left-or-right.spec.json`) reads `lr-word` / `lr-correct` / `lr-wrong` itself with `toDialogs` and plays them while Ryuuko is off screen. Its 14 verb clips (`ryuuko/<verb>.mp3`, the `{target}` clip) come from `python/dialogs/ryuuko_verbs.yaml`.

@@ -55,6 +55,7 @@ export default async function QuestPage({ // name: **QuestScene** -> **QuestPage
     // has Hiroko already asked this player about this quest type's tutorial?
     // Read through RLS (select policy: own rows only)
 
-    const props: QuestSceneProps = { islandId, quest: row, cleared: !!mine?.completed_at, tutorialSeen: !!tutorial, questType, group } // props: **no questType** -> **+ questType**, mechanism: QuestScene picks QuestIsland or DodgeQuestIsland from it // props: **no tutorialSeen** -> **+ tutorialSeen**, mechanism: a row in user_tutorials means she already asked, so QuestScene skips the question
+    const props: QuestSceneProps = { islandId, quest: row, cleared: !!mine?.completed_at, tutorialSeen: !!tutorial, questType, group, timerMs: (full.timer_ms as number | null) ?? undefined } // props: **no questType** -> **+ questType**, mechanism: QuestScene picks QuestIsland or DodgeQuestIsland from it // props: **no tutorialSeen** -> **+ tutorialSeen**, mechanism: a row in user_tutorials means she already asked, so QuestScene skips the question
+    // props: **+ timerMs**, mechanism: quests.timer_ms from /IslandEditor; null = the quest's default timer
     return <QuestScene {...props} /> // render: **inline JSX** -> **<QuestScene>**, mechanism: the page keeps the guards and the start/resume write; QuestScene ('use client') gets the quest and cleared flag as plain props and draws them
 }

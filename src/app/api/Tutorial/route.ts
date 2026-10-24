@@ -3,7 +3,7 @@ import { adminClient, serverClient } from '@/utils/supabase'
 import type { QuestType } from '@/components/Game/Scene/tutorial'
 
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status })
-const TYPES: QuestType[] = ['dodge'] // types: **5** -> **dodge only**, mechanism: island 1's quest is the only one in the demo
+const TYPES: QuestType[] = ['dodge', 'matching', 'inbetween'] // types: **dodge only** -> **+ matching, inbetween**, mechanism: the matching and in-between quests save their tutorial row too // types: **5** -> **dodge only**, mechanism: island 1's quest is the only one in the demo
 // // types: **4** -> **+ 'particle'**, mechanism: island 3's quest saves its tutorial row too
 // the quest types Hiroko has a tutorial for; anything else is a bad request
 

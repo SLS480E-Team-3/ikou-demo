@@ -95,6 +95,7 @@
         "The side panel has a quest dropdown for the selected NPC, plus the quest's props.",
         "Quests can be created and edited in the side panel; they are saved to the Supabase quests table.",
         "Quest props: level (e.g. vocab, meaning), quest type (e.g. dodge, door) and target.",
+        "Under target, an optional timer in ms (quests.timer_ms): the matching / in-between pick timer, shorter = harder; empty = the quest's default.",
         "Target shape depends on the quest: a kana string for dodge (target: あ), or { answer: [...], decoys: [...] } for door (answer: 食べる, 歩く, 走る; decoys: 食べる, 歩く, 走る, 行く, 寝る).",
         "Island and quest props are loaded from Supabase."
       ]

@@ -8,10 +8,9 @@ import hirokoScript from "../npcs/dialogs/hiroko_en.json"
 // Hiroko's quest tutorials (docs/quest-tutorials.spec.json): she stands next
 // to Ryuuko before a run and explains the quest type in English
 
-export type QuestType = 'original' | 'dodge' | 'shoot' | 'door' | 'particle' // types: **4** -> **+ 'particle'**, mechanism: island 3's catch-the-right-wood quest (docs/island-3.spec.json)
-export type QuestKind = QuestType | 'matching'
-// every quest_type a quests row can have: QuestType (the ones with a Hiroko
-// tutorial) plus 'matching' (issue #8), which has no tutorial yet
+export type QuestType = 'original' | 'dodge' | 'shoot' | 'door' | 'particle' | 'matching' | 'inbetween' // types: **+ 'matching', 'inbetween'**, mechanism: Hiroko's tutorials for the matching (#8) and in-between (#12) quests // types: **4** -> **+ 'particle'**, mechanism: island 3's catch-the-right-wood quest (docs/island-3.spec.json)
+export type QuestKind = QuestType // kinds: **QuestType | 'matching'** -> **QuestType**, mechanism: 'matching' has a Hiroko tutorial now, so it moved into QuestType
+// every quest_type a quests row can have; each has a Hiroko tutorial
 export type TutorialProps = { seen: boolean, onSeen: () => void }
 // seen: the player was already asked about this quest type (Supabase,
 // user_tutorials); onSeen: called once when they answer. No props at all =

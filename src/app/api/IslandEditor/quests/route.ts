@@ -24,6 +24,7 @@ export async function POST(req: Request) {
         level: quest.level ?? null,
         quest_type: quest.quest_type ?? null,
         target: quest.target ?? null,
+        ...('timer_ms' in quest ? { timer_ms: quest.timer_ms ?? null } : {}), // timer_ms: **+**, mechanism: the editor's timer field (null = the quest's default timer); only sent when the row has the column or the field was typed in, so saves keep working before the timer_ms SQL is run
     }
     const db = adminClient().from('quests')
     const { data, error } = quest.id
