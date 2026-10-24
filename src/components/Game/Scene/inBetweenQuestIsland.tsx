@@ -8,9 +8,11 @@ import { PLAYER_GAP, useInBetweenTraining, type IbQuestion } from "./inBetweenTr
 import { inBetweenNpcs } from "../npcs/npcs"
 import { BUBBLE_BG, BUBBLE_BOARDER, BUBBLE_BORDER_W } from "../Entity/dialogBubble"
 import { stopBgm } from "../Entity/voice"
+import { HIROKO_DX, useMergedTalk, useTutorial, type TutorialProps } from "./tutorial" // imports: **+ tutorial**, mechanism: Hiroko's in-between tutorial, as in matchingQuestIsland.tsx
 // a copy of matchingQuestIsland.tsx for the in-between quest (issue #12): the
 // same square dojo with Ryuuko at its center, the sentence row and the
-// player's word from useInBetweenTraining. No Hiroko tutorial and no hp bar
+// player's word from useInBetweenTraining, Hiroko's tutorial in 'intro', and
+// no hp bar
 
 const TIMER_H = 8
 const TIMER_TOP = 40
@@ -18,8 +20,10 @@ const FLASH_MS = 300
 const FLASH_OPACITY = 0.6
 const FLASH_COLOR = '#ff8a8a'
 const CARD_TOP = 104
+const TARGET_COLOR = '#c8302a'
 // same timer strip and damage flash as matchingQuestIsland.tsx; CARD_TOP: the
-// sentence card's top, below the timer strip and the mute button
+// sentence card's top, below the timer strip and the mute button;
+// TARGET_COLOR: the target word's red (the matching quest's red area)
 
 function Bar({ frac, color, style }: { frac: number, color: string, style: CSSProperties }) {
     return (
@@ -29,7 +33,15 @@ function Bar({ frac, color, style }: { frac: number, color: string, style: CSSPr
     )
 }
 
-function Hud({ getHud, getSentence }: { getHud: () => TrainingHud, getSentence: () => { chars: string[], word: string } | undefined }) {
+function EnSentence({ en, word }: { en: string, word: string }) {
+    const i = word ? en.indexOf(word) : -1
+    if (i < 0) return <>{en}</>
+    return <>{en.slice(0, i)}<span style={{ color: TARGET_COLOR }}>{word}</span>{en.slice(i + word.length)}</>
+}
+// the card's English sentence with its first `word` in red ("I like <this>
+// fish"); a word that isn't in the sentence leaves it all black
+
+function Hud({ getHud, getSentence }: { getHud: () => TrainingHud, getSentence: () => { en: string, enWord: string, word: string } | undefined }) {
     const [, force] = useReducer((n: number) => n + 1, 0)
     useEffect(() => {
         let raf = requestAnimationFrame(function loop() { force(); raf = requestAnimationFrame(loop) })
@@ -41,7 +53,7 @@ function Hud({ getHud, getSentence }: { getHud: () => TrainingHud, getSentence: 
     return (
         <>
             {sentence && <div style={{ position: 'absolute', zIndex: 2, top: `calc(var(--safe-top) + ${CARD_TOP}px)`, left: '5%', width: '90%', boxSizing: 'border-box', border: `${BUBBLE_BORDER_W}px solid ${BUBBLE_BOARDER}`, background: BUBBLE_BG, padding: '6px 8px', textAlign: 'center', color: 'black', pointerEvents: 'none', userSelect: 'none' }}>
-                <div style={{ fontSize: 20, fontWeight: 'bold', letterSpacing: '0.5em' }}>{sentence.chars.join('')}</div>
+                <div style={{ fontSize: 20, fontWeight: 'bold' }}><EnSentence en={sentence.en} word={sentence.enWord} /></div> {/* text: **sentence.en** -> **EnSentence**, reason: the target word should stand out, mechanism: enWord in red, the rest black */} {/* text: **sentence.chars, spaced** -> **sentence.en**, mechanism: the English meaning; letterSpacing dropped, it was for the kana */}
                 <div style={{ fontSize: 14, marginTop: 2 }}>your word: <b style={{ fontSize: 18 }}>{sentence.word}</b></div>
             </div>}
             {flash > 0 && <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: FLASH_COLOR, opacity: flash, pointerEvents: 'none' }} />}
@@ -50,15 +62,20 @@ function Hud({ getHud, getSentence }: { getHud: () => TrainingHud, getSentence: 
     )
 }
 // the matching quest's HUD: the cyan strip drains over the 5 s timer, a wrong
-// gap flashes red; under it a card with the whole sentence (the floor row is
-// wider than a phone shows) and the player's word
+// gap flashes red; under it a card with the sentence's English and the
+// player's word
 
-function Training({ w, h, onLeave, questions, sensitivity, children }: { w: number, h: number, onLeave: () => void, questions?: IbQuestion[], sensitivity?: number, children?: ReactNode }) {
-    const t = useInBetweenTraining({ w, h, onLeave, questions })
+function Training({ w, h, onLeave, questions, sensitivity, tutorial, timerMs, children }: { w: number, h: number, onLeave: () => void, questions?: IbQuestion[], sensitivity?: number, tutorial?: TutorialProps, timerMs?: number, children?: ReactNode }) { // props: **+ timerMs?**, reason: shorter timers for harder quests, mechanism: passed to the training hook; left out = the quest's default timer // props: **+ tutorial?**, mechanism: passed on to useTutorial; undefined = no account, so Hiroko asks every time
+    const t = useInBetweenTraining({ w, h, onLeave, questions, timerMs })
+    const tut = useTutorial('inbetween', t.phase === 'intro', tutorial)
+    const talk = useMergedTalk(t.talkRequest, tut.talkRequest)
     const c = center(w, h)
+    const npcs = inBetweenNpcs(w, h, t.phase)
+    const cast = t.phase === 'intro' ? [...npcs, tut.hiroko((npcs[0].ent.x ?? 0) + HIROKO_DX, npcs[0].ent.y ?? 0)] : npcs
+    // Hiroko as in matchingQuestIsland.tsx: index 1 right of Ryuuko, 'intro' only
     return (
         <>
-            <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={inBetweenNpcs(w, h, t.phase)} onChoice={t.onChoice} onTalkEnd={t.onTalkEnd} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={t.talkRequest} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} fitWhole />
+            <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} fitWhole /> {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: same as dodgeQuestIsland.tsx */}
             <Hud getHud={t.getHud} getSentence={t.getSentence} />
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>
@@ -67,7 +84,7 @@ function Training({ w, h, onLeave, questions, sensitivity, children }: { w: numb
 // matchingQuestIsland.tsx's Training on useInBetweenTraining; fitWhole lets
 // the player pinch out to read the whole sentence row
 
-export function InBetweenQuestIsland({ onLeave, questions, sensitivity, children }: { onLeave: () => void, questions?: IbQuestion[], sensitivity?: number, children?: ReactNode }) {
+export function InBetweenQuestIsland({ onLeave, questions, sensitivity, tutorial, timerMs, children }: { onLeave: () => void, questions?: IbQuestion[], sensitivity?: number, tutorial?: TutorialProps, timerMs?: number, children?: ReactNode }) { // props: **+ timerMs?**, reason: shorter timers for harder quests, mechanism: passed to the training hook; left out = the quest's default timer // props: **+ tutorial?**, mechanism: passed through Training to useTutorial
     const boxRef = useRef<HTMLDivElement>(null)
     const [size, setSize] = useState<{ w: number, h: number }>()
     useEffect(() => { stopBgm() }, [])
@@ -77,7 +94,7 @@ export function InBetweenQuestIsland({ onLeave, questions, sensitivity, children
     }, [])
     return (
         <div ref={boxRef} style={{ position: 'relative', width: '100%', height: '100%', background: BUBBLE_BG }}>
-            {size && <Training w={size.w} h={size.h} onLeave={onLeave} questions={questions} sensitivity={sensitivity}>{children}</Training>}
+            {size && <Training w={size.w} h={size.h} onLeave={onLeave} questions={questions} sensitivity={sensitivity} tutorial={tutorial} timerMs={timerMs}>{children}</Training>}
         </div>
     )
 }

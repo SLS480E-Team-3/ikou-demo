@@ -57,7 +57,7 @@ const FEET_IN = 4
 // their body (player is center + size)
 
 const ASK_MS = 800
-const TIMER_MS = 3000
+const TIMER_MS = 10000
 const RESULT_MS = 1200
 const DAMAGE_SFX = '/_SFX/tookDamage.mp3'
 // how long the word shows before the areas appear, the timer once they're
@@ -83,8 +83,12 @@ const shuffle = <T,>(a: T[]): T[] => {
     return b
 }
 
-export function useMatchingTraining({ w, h, onLeave, group = 'pronoun' }: { w: number, h: number, onLeave?: () => void, group?: KosoadoGroup }) { // args: **+ group**, mechanism: picks the run's words; left out = これ / それ / あれ / どれ
+export function useMatchingTraining({ w, h, onLeave, group = 'pronoun', timerMs = TIMER_MS }: { w: number, h: number, onLeave?: () => void, group?: KosoadoGroup, timerMs?: number }) { // args: **+ timerMs**, reason: shorter timers for harder quests, mechanism: replaces TIMER_MS (now the default) through timerRef // args: **+ group**, mechanism: picks the run's words; left out = これ / それ / あれ / どれ
     const [phase, setPhaseState] = useState<MtPhase>('intro')
+    const timerRef = useRef(timerMs)
+    timerRef.current = timerMs
+    // the pick timer in ms, read through a ref so onTick / getHud (empty deps)
+    // see a new value without being rebuilt
     const phaseRef = useRef<MtPhase>('intro')
     const [talkRequest, setTalkRequest] = useState<{ npc: number, key: number } | undefined>(undefined)
     const [moveRequest, setMoveRequest] = useState<{ x: number, y: number, key: number } | undefined>(undefined)
@@ -163,7 +167,7 @@ export function useMatchingTraining({ w, h, onLeave, group = 'pronoun' }: { w: n
             if (since >= ASK_MS) setStep('pick')
             return
         }
-        if (step.current !== 'pick' || since < TIMER_MS) return
+        if (step.current !== 'pick' || since < timerRef.current) return
         // the areas are out once ASK_MS has passed; nothing is checked until
         // the 3 s timer runs out, so the player can walk between them
 
@@ -238,7 +242,7 @@ export function useMatchingTraining({ w, h, onLeave, group = 'pronoun' }: { w: n
 
     const getHud = useCallback((): TrainingHud => {
         const pick = phaseRef.current === 'play' && step.current === 'pick'
-        const left = pick ? Math.max(0, TIMER_MS - stepMs.current) : TIMER_MS
+        const left = pick ? Math.max(0, timerRef.current - stepMs.current) : timerRef.current
         const q = questionsRef.current[Math.min(current.current, questionsRef.current.length - 1)]
         return {
             target: q.word,
@@ -248,7 +252,7 @@ export function useMatchingTraining({ w, h, onLeave, group = 'pronoun' }: { w: n
             hp: 1,
             maxHP: 1,
             secondsLeft: Math.ceil(left / 1000),
-            timeFrac: left / TIMER_MS,
+            timeFrac: left / timerRef.current,
             playing: pick,
             hurtAt: hurtAt.current,
         }

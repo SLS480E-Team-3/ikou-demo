@@ -17,6 +17,8 @@ Measures the box once, makes a square island one screen tall, stops any BGM and 
 | `onLeave` | `() => void` | Elena's はい |
 | `group` | `KosoadoGroup?` | the quest's こそあど group (default `pronoun`) |
 | `sensitivity` | `number?` | stick sensitivity, passed to GameScene |
+| `timerMs` | `number?` | the pick timer in ms (default 10000); shorter = harder |
+| `tutorial` | `TutorialProps?` | Hiroko's seen / onSeen (`useTutorial('matching')`); left out = she asks every time |
 | `children` | `ReactNode?` | success slot (shown in `success` / `again`) |
 
 **Output:** JSX. **Side effects:** `stopBgm()` on mount.
@@ -31,4 +33,4 @@ Measures the box once, makes a square island one screen tall, stops any BGM and 
 
 ### `Training`, `Hud`, `Bar` (local)
 
-`Training` wires `useMatchingTraining` and `matchingNpcs` into `GameScene`; `Hud` re-reads `getHud()` each frame for the cyan 3 s timer strip and the red flash on a wrong pick.
+`Training` wires `useMatchingTraining`, `matchingNpcs` and Hiroko (`useTutorial`, index 1 right of Ryuuko in `intro`) into `GameScene`; `Hud` re-reads `getHud()` each frame for the cyan 3 s timer strip and the red flash on a wrong pick.

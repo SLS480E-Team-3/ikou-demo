@@ -3,7 +3,7 @@ import { NPC_SCRIPTS, withQuestLine } from "../npcs/npcs"
 import { toNPCProps } from "../npcs/toNPCProps"
 import type { FileNpc } from "./islandFile"
 
-export type LayoutQuest = { id: number, title: string, kana: string | null, target?: unknown, status?: 'done' | 'resume' }
+export type LayoutQuest = { id: number, title: string, kana: string | null, target?: unknown, timer_ms?: number | null, status?: 'done' | 'resume' }
 
 export const layoutNpcs = (npcs: FileNpc[], quests: LayoutQuest[]): NPCProps[] => npcs.flatMap((n): NPCProps[] => {
     const script = NPC_SCRIPTS[n.npc]

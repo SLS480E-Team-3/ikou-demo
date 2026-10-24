@@ -14,7 +14,7 @@
 ## `/api/IslandEditor/quests`
 
 - `GET ?island=N` → `{ quests: rows }` (`select('*')`, so it works with or without the new columns)
-- `POST { quest: EditorQuest }` → `{ quest: row }`: insert (no id) or update (id). `kana` mirrors a string `target`.
+- `POST { quest: EditorQuest }` → `{ quest: row }`: insert (no id) or update (id). `kana` mirrors a string `target`. `timer_ms` is written only when the quest has that key (so saves work before the column exists).
 
 ## `/api/IslandEditor/sprites`
 

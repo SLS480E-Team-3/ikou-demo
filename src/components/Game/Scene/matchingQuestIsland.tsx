@@ -9,10 +9,10 @@ import { matchingNpcs } from "../npcs/npcs"
 import { BUBBLE_BG, BUBBLE_BOARDER, BUBBLE_BORDER_W } from "../Entity/dialogBubble"
 import { stopBgm } from "../Entity/voice"
 import type { KosoadoGroup } from "../kosoado"
+import { HIROKO_DX, useMergedTalk, useTutorial, type TutorialProps } from "./tutorial" // imports: **+ tutorial**, mechanism: Hiroko's matching tutorial, as in dodgeQuestIsland.tsx
 // a copy of dodgeQuestIsland.tsx for the matching quest (issue #8): the same
 // square dojo with Ryuuko at its center, the three areas and her word bubble
-// from useMatchingTraining. No Hiroko tutorial yet (no 'matching' quest type
-// in tutorial.ts) and no hp bar
+// from useMatchingTraining, Hiroko's tutorial in 'intro', and no hp bar
 
 const TIMER_H = 8
 const TIMER_TOP = 40
@@ -47,12 +47,19 @@ function Hud({ getHud }: { getHud: () => TrainingHud }) {
 // dodge's HUD without the hp bar: the cyan strip drains over the 3 s pick
 // timer (hud.playing is only true then), and a wrong pick flashes red
 
-function Training({ w, h, onLeave, group, sensitivity, children }: { w: number, h: number, onLeave: () => void, group?: KosoadoGroup, sensitivity?: number, children?: ReactNode }) { // props: **+ group**, mechanism: passed to useMatchingTraining
-    const t = useMatchingTraining({ w, h, onLeave, group })
+function Training({ w, h, onLeave, group, sensitivity, tutorial, timerMs, children }: { w: number, h: number, onLeave: () => void, group?: KosoadoGroup, sensitivity?: number, tutorial?: TutorialProps, timerMs?: number, children?: ReactNode }) { // props: **+ timerMs?**, reason: shorter timers for harder quests, mechanism: passed to the training hook; left out = the quest's default timer // props: **+ tutorial?**, mechanism: passed on to useTutorial; undefined = no account, so Hiroko asks every time // props: **+ group**, mechanism: passed to useMatchingTraining
+    const t = useMatchingTraining({ w, h, onLeave, group, timerMs })
+    const tut = useTutorial('matching', t.phase === 'intro', tutorial)
+    const talk = useMergedTalk(t.talkRequest, tut.talkRequest)
     const c = center(w, h)
+    const npcs = matchingNpcs(w, h, t.phase)
+    const cast = t.phase === 'intro' ? [...npcs, tut.hiroko((npcs[0].ent.x ?? 0) + HIROKO_DX, npcs[0].ent.y ?? 0)] : npcs
+    // dodgeQuestIsland.tsx's Hiroko: live only in 'intro', appended as index 1
+    // (HIROKO) right of Ryuuko; Elena is never out in 'intro'. talk is the one
+    // talkRequest GameScene gets (the training's or Hiroko's, whichever changed last)
     return (
         <>
-            <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={matchingNpcs(w, h, t.phase)} onChoice={t.onChoice} onTalkEnd={t.onTalkEnd} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={t.talkRequest} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} />
+            <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} /> {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: same as dodgeQuestIsland.tsx */}
             <Hud getHud={t.getHud} />
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>
@@ -61,7 +68,7 @@ function Training({ w, h, onLeave, group, sensitivity, children }: { w: number, 
 // dodgeQuestIsland.tsx's Training on useMatchingTraining: questBg's dojo,
 // the player spawning PLAYER_GAP below Ryuuko, children in the success slot
 
-export function MatchingQuestIsland({ onLeave, group, sensitivity, children }: { onLeave: () => void, group?: KosoadoGroup, sensitivity?: number, children?: ReactNode }) { // props: **+ group**, mechanism: the quest's こそあど group (its target); left out = これ / それ / あれ / どれ
+export function MatchingQuestIsland({ onLeave, group, sensitivity, tutorial, timerMs, children }: { onLeave: () => void, group?: KosoadoGroup, sensitivity?: number, tutorial?: TutorialProps, timerMs?: number, children?: ReactNode }) { // props: **+ timerMs?**, reason: shorter timers for harder quests, mechanism: passed to the training hook; left out = the quest's default timer // props: **+ tutorial?**, mechanism: passed through Training to useTutorial // props: **+ group**, mechanism: the quest's こそあど group (its target); left out = これ / それ / あれ / どれ
     const boxRef = useRef<HTMLDivElement>(null)
     const [size, setSize] = useState<{ w: number, h: number }>()
     useEffect(() => { stopBgm() }, [])
@@ -71,7 +78,7 @@ export function MatchingQuestIsland({ onLeave, group, sensitivity, children }: {
     }, [])
     return (
         <div ref={boxRef} style={{ position: 'relative', width: '100%', height: '100%', background: BUBBLE_BG }}>
-            {size && <Training w={size.w} h={size.h} onLeave={onLeave} group={group} sensitivity={sensitivity}>{children}</Training>}
+            {size && <Training w={size.w} h={size.h} onLeave={onLeave} group={group} sensitivity={sensitivity} tutorial={tutorial} timerMs={timerMs}>{children}</Training>}
         </div>
     )
 }

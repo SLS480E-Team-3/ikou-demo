@@ -19,7 +19,7 @@ import { useTileWalk } from "@/components/Game/islands/tiles"
 // MobileTester's 'game scene' page, moved here so /MobDev/GameScene?island=N can show it
 // full-screen on a phone too
 
-type QuestPick = { kana: string, group?: KosoadoGroup }
+type QuestPick = { kana: string, group?: KosoadoGroup, timerMs?: number } // pick: **+ timerMs**, mechanism: the quest's timer_ms from the editor
 // the quest a はい opens without login: the dodge quest with kana, or the
 // matching quest when group is set
 
@@ -78,7 +78,7 @@ export default function IslandPreview({ sensitivity, start = 1, tint = false, ve
     if (inQuest) return (
         <div style={{ position: 'relative', width: '100%', height: '100%', background: BUBBLE_BG }}>
             {pageTint}
-            {inQuest.group ? <MatchingQuestIsland key={`quest-${island}`} group={inQuest.group} sensitivity={sensitivity} onLeave={() => setInQuest(false)} /> : <DodgeQuestIsland key={`quest-${island}`} kana={inQuest.kana} sensitivity={sensitivity} onLeave={() => setInQuest(false)} />} {/* scene: **dodge** -> **matching when the quest has a group**, mechanism: QuestPick.group */} {/* scene: **by islandQuestType** -> **DodgeQuestIsland**, mechanism: the demo ships island 1 only */}
+            {inQuest.group ? <MatchingQuestIsland key={`quest-${island}`} group={inQuest.group} timerMs={inQuest.timerMs} sensitivity={sensitivity} onLeave={() => setInQuest(false)} /> : <DodgeQuestIsland key={`quest-${island}`} kana={inQuest.kana} sensitivity={sensitivity} onLeave={() => setInQuest(false)} />} {/* scene: **dodge** -> **matching when the quest has a group**, mechanism: QuestPick.group */} {/* scene: **by islandQuestType** -> **DodgeQuestIsland**, mechanism: the demo ships island 1 only */}
             {/* <span style={{ position: 'absolute', top: 16, left: 16, zIndex: 2 }}>quest island (from island {island})</span> */} {/* label: **shown** -> **commented out**, mechanism: hidden for now; uncomment to show which island the quest came from */}
         </div>
     )
@@ -132,7 +132,7 @@ function SavedIsland({ file, quests, tint, sensitivity, onQuest, done, onClear }
     const tiles = file.tiles ?? []
     const pickOf = (id?: number): QuestPick => {
         const q = quests.find(x => x.id === id)
-        return { kana: (typeof q?.target === 'string' && q.target) || q?.kana || 'あ', group: groupOf(q?.target) }
+        return { kana: (typeof q?.target === 'string' && q.target) || q?.kana || 'あ', group: groupOf(q?.target), timerMs: q?.timer_ms ?? undefined }
     } // kanaOf: **kana** -> **pickOf: kana + group**, mechanism: a { group } target opens the matching quest
     const tileWalk = useTileWalk(tiles, tiles.map(t => done.includes(t.id)), t => {
         onClear(t.id)

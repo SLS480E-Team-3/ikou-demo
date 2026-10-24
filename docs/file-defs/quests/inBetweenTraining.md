@@ -17,8 +17,9 @@ Hook that runs the quest's phases (`intro` → `play` → `success` → `again`)
 | `w`, `h` | `number` | island size in world px (square, one screen tall) |
 | `onLeave` | `() => void` | called on はい to Elena |
 | `questions` | `IbQuestion[]?` | the run's sentences (default `IB_QUESTIONS`) |
+| `timerMs` | `number?` | the pick timer in ms (default `TIMER_MS` 5000); shorter = harder |
 
-**Output:** `{ phase, onTick, onChoice, onTalkEnd, renderWorld, getHud, getSentence, playerLabel, talkRequest, moveRequest }`, passed to `GameScene` like the other trainings. `getSentence()` gives `{ chars, word }` while playing (the shell's top card); `playerLabel()` is the word.
+**Output:** `{ phase, onTick, onChoice, onTalkEnd, renderWorld, getHud, getSentence, playerLabel, talkRequest, moveRequest }`, passed to `GameScene` like the other trainings. `getSentence()` gives `{ en, enWord, word }` while playing (the shell's top card: the English sentence); `playerLabel()` is the word.
 
 **Side effects:** plays Ryuuko's `mt-correct` / `mt-wrong` clips and the damage sound; moves the player below Ryuuko (above the row) before each sentence.
 
@@ -38,7 +39,7 @@ The row centered under Ryuuko: `n` character tiles and the `n + 1` gaps around t
 
 ## Exports (data)
 
-- `IbQuestion`: `{ before, word, after, romaji, en }`; the floor shows `before + after`, the answer is slot `before.length`.
+- `IbQuestion`: `{ before, word, after, romaji, en, enWord }` (`enWord`: the part of `en` for `word`, red on the card); the floor shows `before + after`, the answer is slot `before.length`.
 - `IB_QUESTIONS`: the test sentence 私は＿さかながすき / この.
 - `IbPhase`: the phase union; `npcs.ts` `inBetweenNpcs` reads it.
 - `PLAYER_GAP`: px from Ryuuko to the player's start; the shell's spawn.

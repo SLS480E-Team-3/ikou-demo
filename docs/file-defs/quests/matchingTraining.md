@@ -8,7 +8,7 @@
 
 ### `useMatchingTraining`
 
-Hook that runs the quest's phases for one こそあど `group` (`kosoado.ts`; default `pronoun`) (`intro` → `play` → `success` → `again`) and the per-word steps (`ask` 800 ms → `pick` 3 s → `result`).
+Hook that runs the quest's phases for one こそあど `group` (`kosoado.ts`; default `pronoun`) (`intro` → `play` → `success` → `again`) and the per-word steps (`ask` 800 ms → `pick` `timerMs` (default 10 s) → `result`).
 
 **Input**
 
@@ -17,6 +17,7 @@ Hook that runs the quest's phases for one こそあど `group` (`kosoado.ts`; de
 | `w`, `h` | `number` | island size in world px (square, one screen tall) |
 | `onLeave` | `() => void` | called on はい to Elena |
 | `group` | `KosoadoGroup?` | which four words the run asks, in こ・そ・あ・ど order |
+| `timerMs` | `number?` | the pick timer in ms (default `TIMER_MS` 10000); shorter = harder |
 
 **Output:** `{ phase, onTick, onChoice, onTalkEnd, renderWorld, getHud, playerLabel, talkRequest, moveRequest }`, passed to `GameScene` like the other trainings. `getHud().playing` is true only while the pick timer runs.
 

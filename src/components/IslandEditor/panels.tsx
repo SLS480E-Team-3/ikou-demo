@@ -169,6 +169,8 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
                 {KANA_ROWS.map(r => <optgroup key={r[0]} label={`${r[0]} row`}>{r.map(k => <option key={k} value={k}>{k} ({KANA_ROMAJI[k]})</option>)}</optgroup>)}
                 {targetText(d.target) && !KANA_ROWS.flat().includes(targetText(d.target)) && <option value={targetText(d.target)}>{targetText(d.target)}</option>}
             </select></label>} {/* target: **free text** -> **select of KANA_ROWS**, reason: pick the kana instead of typing it, mechanism: one optgroup per row with romaji; a saved target outside the rows is kept as an extra option */}
+            <label style={row}>timer <input type="number" min={500} step={500} value={d.timer_ms ?? ''} placeholder="default" onChange={e => setD({ ...d, timer_ms: e.target.value ? Math.max(500, n(e.target.value)) : null })} style={{ width: 80 }} /> ms</label>
+            {/* timer: **+**, reason: shorten the pick timer to make a quest harder, mechanism: saved as quests.timer_ms and passed to the quest island as timerMs; empty = null = the quest's default (matching 10000, in-between 5000), floor 500 ms */}
             {d.quest_type !== 'dodge' && !matching && <span style={{ color: '#a60' }}>Only dodge and matching quests run in this demo.</span>}
             <div style={row}><button onClick={save} disabled={!d.title}>{quest ? 'Save quest' : 'Create quest + assign'}</button>{msg && <span>{msg}</span>}</div>
         </div>

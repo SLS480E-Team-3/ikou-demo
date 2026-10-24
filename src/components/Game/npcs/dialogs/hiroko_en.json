@@ -342,6 +342,146 @@
           "style": "calm, warm, clear"
         }
       ]
+    },
+    {
+      "condition": "tut-matching-touch",
+      "lines": [
+        {
+          "text": "Ryuuko gives you a Japanese word.",
+          "en": "Ryuuko gives you a Japanese word.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Three colored areas appear, each with an English meaning.",
+          "en": "Three colored areas appear, each with an English meaning.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Stand in the area with the right meaning until the timer runs out.",
+          "en": "Stand in the area with the right meaning until the timer runs out.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Miss it and she asks the same word again.",
+          "en": "Miss it and she asks the same word again.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Drag anywhere to move. Pinch to zoom.",
+          "en": "Drag anywhere to move. Pinch to zoom.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Talk to Ryuuko when you are ready.",
+          "en": "Talk to Ryuuko when you are ready.",
+          "style": "calm, warm, clear"
+        }
+      ]
+    },
+    {
+      "condition": "tut-matching-keys",
+      "lines": [
+        {
+          "text": "Ryuuko gives you a Japanese word.",
+          "en": "Ryuuko gives you a Japanese word.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Three colored areas appear, each with an English meaning.",
+          "en": "Three colored areas appear, each with an English meaning.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Stand in the area with the right meaning until the timer runs out.",
+          "en": "Stand in the area with the right meaning until the timer runs out.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Miss it and she asks the same word again.",
+          "en": "Miss it and she asks the same word again.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Move with W A S D. Scroll to zoom.",
+          "en": "Move with W A S D. Scroll to zoom.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Talk to Ryuuko when you are ready.",
+          "en": "Talk to Ryuuko when you are ready.",
+          "style": "calm, warm, clear"
+        }
+      ]
+    },
+    {
+      "condition": "tut-inbetween-touch",
+      "lines": [
+        {
+          "text": "Ryuuko tells you which Japanese word you are.",
+          "en": "Ryuuko tells you which Japanese word you are.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "A sentence with one word missing appears on the floor.",
+          "en": "A sentence with one word missing appears on the floor.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Stand in the gap where your word fits until the timer runs out.",
+          "en": "Stand in the gap where your word fits until the timer runs out.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Miss it and the same sentence comes back.",
+          "en": "Miss it and the same sentence comes back.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Drag anywhere to move. Pinch to zoom.",
+          "en": "Drag anywhere to move. Pinch to zoom.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Talk to Ryuuko when you are ready.",
+          "en": "Talk to Ryuuko when you are ready.",
+          "style": "calm, warm, clear"
+        }
+      ]
+    },
+    {
+      "condition": "tut-inbetween-keys",
+      "lines": [
+        {
+          "text": "Ryuuko tells you which Japanese word you are.",
+          "en": "Ryuuko tells you which Japanese word you are.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "A sentence with one word missing appears on the floor.",
+          "en": "A sentence with one word missing appears on the floor.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Stand in the gap where your word fits until the timer runs out.",
+          "en": "Stand in the gap where your word fits until the timer runs out.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Miss it and the same sentence comes back.",
+          "en": "Miss it and the same sentence comes back.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Move with W A S D. Scroll to zoom.",
+          "en": "Move with W A S D. Scroll to zoom.",
+          "style": "calm, warm, clear"
+        },
+        {
+          "text": "Talk to Ryuuko when you are ready.",
+          "en": "Talk to Ryuuko when you are ready.",
+          "style": "calm, warm, clear"
+        }
+      ]
     }
   ]
 }

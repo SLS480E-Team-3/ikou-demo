@@ -59,3 +59,7 @@ from islands i
 cross join unnest(array['あ','い','う','え','お']) as k(kana)
 where i.sort_order between 2 and 5
   and not exists (select 1 from quests q where q.island_id = i.id and q.kana = k.kana);
+
+-- Quest timer (IslandEditor "timer" field): pick timer in ms for the matching / in-between quests
+-- null = the quest's default (matching 10000, in-between 5000)
+alter table quests add column if not exists timer_ms integer;
