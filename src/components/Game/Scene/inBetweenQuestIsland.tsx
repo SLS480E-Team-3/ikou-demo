@@ -2,7 +2,7 @@
 
 import { CSSProperties, ReactNode, useEffect, useReducer, useRef, useState } from "react"
 import GameScene, { questBg } from "./gameScene"
-import { TrainingHud } from "./training"
+import { TrainingHud, useQuestZoom } from "./training"
 import { center } from "./dodgeTraining"
 import { PLAYER_GAP, useInBetweenTraining, type IbQuestion } from "./inBetweenTraining"
 import { inBetweenNpcs } from "../npcs/npcs"
@@ -69,13 +69,15 @@ function Training({ w, h, onLeave, questions, sensitivity, tutorial, timerMs, ch
     const t = useInBetweenTraining({ w, h, onLeave, questions, timerMs })
     const tut = useTutorial('inbetween', t.phase === 'intro', tutorial)
     const talk = useMergedTalk(t.talkRequest, tut.talkRequest)
+    const zoomRequest = useQuestZoom(t.phase === 'play')
+    // zoom out to QUEST_ZOOM (0.55) when a run starts
     const c = center(w, h)
     const npcs = inBetweenNpcs(w, h, t.phase)
     const cast = t.phase === 'intro' ? [...npcs, tut.hiroko((npcs[0].ent.x ?? 0) + HIROKO_DX, npcs[0].ent.y ?? 0)] : npcs
     // Hiroko as in matchingQuestIsland.tsx: index 1 right of Ryuuko, 'intro' only
     return (
         <>
-            <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} fitWhole /> {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: same as dodgeQuestIsland.tsx */}
+            <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} zoomRequest={zoomRequest} fitWhole /> {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: same as dodgeQuestIsland.tsx */}
             <Hud getHud={t.getHud} getSentence={t.getSentence} />
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>

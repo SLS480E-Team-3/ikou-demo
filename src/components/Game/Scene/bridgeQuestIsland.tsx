@@ -1,6 +1,7 @@
 'use client'
 
 import { CSSProperties, PointerEvent, ReactNode, useEffect, useReducer, useRef, useState } from "react"
+import { useQuestZoom } from "./training"
 import GameScene, { questBg } from "./gameScene"
 import { BLACK_IN_MS, BLACK_MS, useBridgeTraining, bridgeLayout, spikeSection } from "./bridgeTraining"
 import { bridgeNpcs } from "../npcs/npcs"
@@ -72,6 +73,8 @@ function Training({ w, h, onLeave, group, sensitivity, tutorial, timerMs, childr
     const t = useBridgeTraining({ w, h, onLeave, group, timerMs })
     const tut = useTutorial('bridge', t.phase === 'intro', tutorial)
     const talk = useMergedTalk(t.talkRequest, tut.talkRequest)
+    const zoomRequest = useQuestZoom(t.phase === 'play')
+    // zoom out to QUEST_ZOOM (0.55) when a run starts
     const start = bridgeLayout(w, h).start
     const bg = questBg(w, h)
     const npcs = bridgeNpcs(w, h, t.phase)
@@ -80,7 +83,7 @@ function Training({ w, h, onLeave, group, sensitivity, tutorial, timerMs, childr
     // of Ryuuko: the player starts at her right
     return (
         <>
-            <GameScene bgProps={{ ...bg, x: start.x, y: start.y, sections: [...(bg.sections ?? []), spikeSection(w, h)] }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} onTap={t.phase === 'play' ? noTap : undefined} walkPath={t.walkPath} onArrive={t.onArrive} cameraFocus={t.cameraFocus} fitWhole />
+            <GameScene bgProps={{ ...bg, x: start.x, y: start.y, sections: [...(bg.sections ?? []), spikeSection(w, h)] }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} zoomRequest={zoomRequest} onTap={t.phase === 'play' ? noTap : undefined} walkPath={t.walkPath} onArrive={t.onArrive} cameraFocus={t.cameraFocus} fitWhole />
             <Hud getHud={t.getHud} stroke={{ start: t.strokeStart, move: t.strokeMove, end: t.strokeEnd }} />
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>

@@ -2,7 +2,7 @@
 
 import { CSSProperties, ReactNode, useEffect, useReducer, useRef, useState } from "react"
 import GameScene, { questBg } from "./gameScene"
-import { TrainingHud } from "./training"
+import { TrainingHud, useQuestZoom } from "./training"
 import { PLAYER_GAP, center, useDodgeTraining } from "./dodgeTraining"
 import { questIslandNpcs } from "../npcs/npcs"
 import { BUBBLE_BG, BUBBLE_BOARDER, BUBBLE_BORDER_W } from "../Entity/dialogBubble"
@@ -57,6 +57,8 @@ function Training({ w, h, onLeave, kana, sensitivity, tutorial, children }: { w:
     const t = useDodgeTraining({ w, h, onLeave, kana })
     const tut = useTutorial('dodge', t.phase === 'intro', tutorial)
     const talk = useMergedTalk(t.talkRequest, tut.talkRequest)
+    const zoomRequest = useQuestZoom(t.phase === 'play1' || t.phase === 'play2')
+    // zoom out to QUEST_ZOOM (0.55) when a run starts
     // Hiroko's tutorial is live only in 'intro'; talk is the one talkRequest
     // GameScene gets (the training's or Hiroko's, whichever changed last).
     // Both hooks run at the top level, never inside the JSX
@@ -72,7 +74,7 @@ function Training({ w, h, onLeave, kana, sensitivity, tutorial, children }: { w:
     // useEffect(() => bgm ? playBgm(bgm) : undefined, [bgm]) // music: **on** -> **commented out**, reason: BGM and quest clear / fail music turned off for now, mechanism: uncomment to bring it back
     return (
         <>
-            <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} fitWhole /> {/* fitWhole: **off** -> **on**, reason: zoom out until the entire dojo can be seen, mechanism: GameScene's zoom-out floor becomes the whole-dojo fit */} {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: tut.onChoice / onTalkEnd return true when the event was Hiroko's, so || skips the training's (which would read npc 1 as Elena); talk carries whichever request changed last */}
+            <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} zoomRequest={zoomRequest} fitWhole /> {/* fitWhole: **off** -> **on**, reason: zoom out until the entire dojo can be seen, mechanism: GameScene's zoom-out floor becomes the whole-dojo fit */} {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: tut.onChoice / onTalkEnd return true when the event was Hiroko's, so || skips the training's (which would read npc 1 as Elena); talk carries whichever request changed last */}
             <Hud getHud={t.getHud} />
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>

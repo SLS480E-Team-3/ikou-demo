@@ -1,6 +1,6 @@
 'use client'
 
-import { createElement, Fragment, useCallback, useRef, useState } from "react"
+import { createElement, Fragment, useCallback, useEffect, useRef, useState } from "react" // import: **+ useEffect**, mechanism: useQuestZoom
 import CharBlock, { CHAR_BLOCK_SIZE, TargetBubble } from "@/components/Game/Entity/charBlock" // import: **+ TargetBubble**, mechanism: drawn over Ryuuko while a level runs
 import { dialogUrl, playLine, playSfx, preloadClips } from "@/components/Game/Entity/voice" // import: **+ playSfx**, mechanism: plays the damage sound on its own <audio> // import: **no preloadClips** -> **+ preloadClips**, mechanism: startLevel decodes the catch sounds ahead of time
 import { BUBBLE_BOARDER, BUBBLE_BORDER_W } from "@/components/Game/Entity/dialogBubble"
@@ -275,3 +275,13 @@ export function useTraining({ w, h, onLeave, kana = 'あ' }: { w: number, h: num
 }
 // usage: pass onTick / onChoice / renderWorld / talkRequest straight to
 // GameScene and build the NPC list with questIslandNpcs(w, h, phase)
+
+export const QUEST_ZOOM = 0.55
+export function useQuestZoom(playing: boolean) {
+    const [zoomRequest, setZoomRequest] = useState<{ zoom: number, key: number }>()
+    useEffect(() => { if (playing) setZoomRequest(r => ({ zoom: QUEST_ZOOM, key: (r?.key ?? 0) + 1 })) }, [playing])
+    return zoomRequest
+}
+// the zoom every quest starts its run at (the whole dojo nearly fits a
+// phone): each time `playing` turns true (a run or level starts) it returns a
+// new GameScene zoomRequest. The player can still pinch / scroll after
