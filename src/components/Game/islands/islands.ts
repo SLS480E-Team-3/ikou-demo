@@ -186,3 +186,5 @@ export const ISLAND_5: PlacedObject[] = [
 // (docs/scenes/volcano.md): a placeholder until the boss is planned. The
 // big volcano straight up from the spawn is where the boss will wait; lava,
 // fire and rocks fill the rest, all reused sprites
+export const ISLAND_6: PlacedObject[] = [
+]
