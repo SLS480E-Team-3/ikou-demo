@@ -32,3 +32,5 @@ Measures the box once, makes a square island one screen tall, stops any BGM and 
 ### `Training`, `Hud`, `Bar` (local)
 
 `Training` wires `useInBetweenTraining`, `inBetweenNpcs` and Hiroko (`useTutorial`, index 1 right of Ryuuko in `intro`) into `GameScene` (with `fitWhole`, so the player can pinch out to the whole row); `Hud` re-reads `getHud()` / `getSentence()` each frame for the cyan 5 s timer strip, the sentence card (below the mute button) and the red flash on a wrong gap.
+
+When a run starts (phase becomes `play`), `useQuestZoom` (training.ts) sends GameScene a `zoomRequest` for `QUEST_ZOOM` (0.55), so the run starts zoomed out; pinch / scroll still work.

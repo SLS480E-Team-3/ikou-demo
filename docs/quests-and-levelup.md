@@ -101,6 +101,9 @@ Planned in Issue #62 (boss rush through every quest type).
 
 ## Quest types
 
+Every quest run (dodge's levels, matching, in between, bridge) starts zoomed out to `QUEST_ZOOM` 0.55 (`useQuestZoom` in `training.ts` → GameScene `zoomRequest`); the player can still pinch / scroll after.
+
+
 - **Catch** (`questIsland.tsx`), **shoot** (`shootQuestIsland.tsx`), **dodge** (`dodgeQuestIsland.tsx`): blocks with the target kana.
 - **Particle** (`particleQuestIsland.tsx`): island 3. A sentence with a blank on the sign, catch the wood piece with the right particle. Spec: [island-3.spec.json](island-3.spec.json).
 - **Matching** (`matchingQuestIsland.tsx`, issue #8): こそあど on the dodge dojo. Ryuuko's bubble shows a word, red / blue / green areas appear with English meanings, and when the 3 s timer runs out the player's feet must be in the right one (正解！ → next word; wrong → 違うわよ！ and the same word again). One quest per group (`kosoado.ts`): demonstrative pronouns これ・それ・あれ・どれ, pre-noun adjectivals この・その・あの・どの, adverbs こう・そう・ああ・どう, adjectival nouns こんな・そんな・あんな・どんな. Set up in /IslandEditor as type `matching` with a group target (`{ "group": "pronoun" }` in `quests.target`); the quest page and /MobDev's saved islands open it, `/MobDev/QuestMatching?group=<key>` plays one directly.
