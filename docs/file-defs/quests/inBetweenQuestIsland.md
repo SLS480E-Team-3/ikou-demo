@@ -2,7 +2,7 @@
 
 - **Path:** `src/components/Game/Scene/inBetweenQuestIsland.tsx`
 - **Topic:** quests
-- **Purpose:** Screen shell of the in-between quest (issue #12): the matching quest's square dojo, timer strip and damage flash, plus a top card with the sentence's English (target word in red, `EnSentence`) and the player's word, on `useInBetweenTraining`.
+- **Purpose:** Screen shell of the in-between quest (issue #12): the matching quest's square dojo, timer clock and damage flash, plus a top card with the sentence's English (target word in red, `EnSentence`) and the player's word, on `useInBetweenTraining`.
 
 ## Functions
 
@@ -31,6 +31,6 @@ Measures the box once, makes a square island one screen tall, stops any BGM and 
 
 ### `Training`, `Hud`, `Bar` (local)
 
-`Training` wires `useInBetweenTraining`, `inBetweenNpcs` and Hiroko (`useTutorial`, index 1 right of Ryuuko in `intro`) into `GameScene` (with `fitWhole`, so the player can pinch out to the whole row); `Hud` re-reads `getHud()` / `getSentence()` each frame for the cyan 5 s timer strip, the sentence card (below the mute button) and the red flash on a wrong gap.
+`Training` wires `useInBetweenTraining`, `inBetweenNpcs` and Hiroko (`useTutorial`, index 1 right of Ryuuko in `intro`) into `GameScene` (with `fitWhole`, so the player can pinch out to the whole row); `Hud` re-reads `getHud()` / `getSentence()` each frame for the timer clock (top left for the whole run), the sentence card (below the mute button) and the red flash on a wrong gap.
 
 When a run starts (phase becomes `play`), `useQuestZoom` (training.ts) sends GameScene a `zoomRequest` for `QUEST_ZOOM` (0.55), so the run starts zoomed out; pinch / scroll still work.
