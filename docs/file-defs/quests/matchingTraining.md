@@ -41,6 +41,6 @@ The three areas' boxes (top-left, world px), centered under Ryuuko: red, blue, g
 
 ## Exports (data)
 
-- `questionsFor(group): MatchQuestion[]`: the group's words in order (`word`, `romaji`, `answer`, `pool` = the other three meanings). Each ask shows the answer plus 2 random from `pool`.
+- `questionsFor(group): MatchQuestion[]`: the group's words in order (`word`, `romaji`, `answer`, `pool` = the other three meanings). Each ask shows the answer plus 2 random from `pool`. Also used by `bridgeTraining.ts` (`useBridgeTraining`), the bridge quest's words.
 - `MtPhase`: the phase union; `npcs.ts` `matchingNpcs` reads it.
 - `PLAYER_GAP`: px from Ryuuko to the player's start; the shell's spawn.

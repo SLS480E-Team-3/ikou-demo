@@ -4,6 +4,7 @@ export const SCREEN_TYPES = [
     'QuestDodge',
     'QuestMatching',
     'QuestInBetween',
+    'QuestBridge',
     'SignUp',
     'LogIn',
     'InfoRecovery',
