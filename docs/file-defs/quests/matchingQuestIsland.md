@@ -2,7 +2,7 @@
 
 - **Path:** `src/components/Game/Scene/matchingQuestIsland.tsx`
 - **Topic:** quests
-- **Purpose:** Screen shell of the matching quest: the dodge quest's square dojo, its timer strip and damage flash, on `useMatchingTraining`.
+- **Purpose:** Screen shell of the matching quest: the dodge quest's square dojo, its damage flash and the timer clock (`timerClock.tsx`), on `useMatchingTraining`.
 
 ## Functions
 
@@ -33,6 +33,6 @@ Measures the box once, makes a square island one screen tall, stops any BGM and 
 
 ### `Training`, `Hud`, `Bar` (local)
 
-`Training` wires `useMatchingTraining`, `matchingNpcs` and Hiroko (`useTutorial`, index 1 right of Ryuuko in `intro`) into `GameScene`; `Hud` re-reads `getHud()` each frame for the cyan 3 s timer strip and the red flash on a wrong pick.
+`Training` wires `useMatchingTraining`, `matchingNpcs` and Hiroko (`useTutorial`, index 1 right of Ryuuko in `intro`) into `GameScene`; `Hud` re-reads `getHud()` each frame for the timer clock (top left for the whole run, `run` = phase `play`) and the red flash on a wrong pick.
 
 When a run starts (phase becomes `play`), `useQuestZoom` (training.ts) sends GameScene a `zoomRequest` for `QUEST_ZOOM` (0.55), so the run starts zoomed out; pinch / scroll still work.

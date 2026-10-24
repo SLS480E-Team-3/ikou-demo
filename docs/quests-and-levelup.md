@@ -101,7 +101,7 @@ Planned in Issue #62 (boss rush through every quest type).
 
 ## Quest types
 
-Every quest run (dodge's levels, matching, in between, bridge) starts zoomed out to `QUEST_ZOOM` 0.55 (`useQuestZoom` in `training.ts` → GameScene `zoomRequest`); the player can still pinch / scroll after.
+Every quest run (dodge's levels, matching, in between, bridge) starts zoomed out to `QUEST_ZOOM` 0.55 (`useQuestZoom` in `training.ts` → GameScene `zoomRequest`); the player can still pinch / scroll after. The timer is a clock at the top left for the whole run (`timerClock.tsx`): its hand starts at 12 and goes round once, back to 12, as the time runs out.
 
 
 - **Catch** (`questIsland.tsx`), **shoot** (`shootQuestIsland.tsx`), **dodge** (`dodgeQuestIsland.tsx`): blocks with the target kana.

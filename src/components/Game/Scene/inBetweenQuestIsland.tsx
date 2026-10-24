@@ -1,6 +1,7 @@
 'use client'
 
-import { CSSProperties, ReactNode, useEffect, useReducer, useRef, useState } from "react"
+import { ReactNode, useEffect, useReducer, useRef, useState } from "react"
+import TimerClock from "./timerClock"
 import GameScene, { questBg } from "./gameScene"
 import { TrainingHud, useQuestZoom } from "./training"
 import { center } from "./dodgeTraining"
@@ -14,24 +15,14 @@ import { HIROKO_DX, useMergedTalk, useTutorial, type TutorialProps } from "./tut
 // player's word from useInBetweenTraining, Hiroko's tutorial in 'intro', and
 // no hp bar
 
-const TIMER_H = 8
-const TIMER_TOP = 40
 const FLASH_MS = 300
 const FLASH_OPACITY = 0.6
 const FLASH_COLOR = '#ff8a8a'
-const CARD_TOP = 104
+const CARD_TOP = 164 // CARD_TOP: **104** -> **164**, reason: the 140 px timer clock at the top left covered the card, mechanism: 16 + 140 + 8 px of gap
 const TARGET_COLOR = '#c8302a'
-// same timer strip and damage flash as matchingQuestIsland.tsx; CARD_TOP: the
-// sentence card's top, below the timer strip and the mute button;
+// same damage flash as matchingQuestIsland.tsx; CARD_TOP: the
+// sentence card's top, below the timer clock and the mute button;
 // TARGET_COLOR: the target word's red (the matching quest's red area)
-
-function Bar({ frac, color, style }: { frac: number, color: string, style: CSSProperties }) {
-    return (
-        <div style={{ position: 'absolute', zIndex: 2, boxSizing: 'border-box', border: `${BUBBLE_BORDER_W}px solid ${BUBBLE_BOARDER}`, background: BUBBLE_BG, pointerEvents: 'none', ...style }}>
-            <div style={{ width: `${frac * 100}%`, height: '100%', background: color }} />
-        </div>
-    )
-}
 
 function EnSentence({ en, word }: { en: string, word: string }) {
     const i = word ? en.indexOf(word) : -1
@@ -41,7 +32,7 @@ function EnSentence({ en, word }: { en: string, word: string }) {
 // the card's English sentence with its first `word` in red ("I like <this>
 // fish"); a word that isn't in the sentence leaves it all black
 
-function Hud({ getHud, getSentence }: { getHud: () => TrainingHud, getSentence: () => { en: string, enWord: string, word: string } | undefined }) {
+function Hud({ getHud, getSentence, run }: { run: boolean, getHud: () => TrainingHud, getSentence: () => { en: string, enWord: string, word: string } | undefined }) {
     const [, force] = useReducer((n: number) => n + 1, 0)
     useEffect(() => {
         let raf = requestAnimationFrame(function loop() { force(); raf = requestAnimationFrame(loop) })
@@ -57,11 +48,11 @@ function Hud({ getHud, getSentence }: { getHud: () => TrainingHud, getSentence: 
                 <div style={{ fontSize: 14, marginTop: 2 }}>your word: <b style={{ fontSize: 18 }}>{sentence.word}</b></div>
             </div>}
             {flash > 0 && <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: FLASH_COLOR, opacity: flash, pointerEvents: 'none' }} />}
-            {hud.playing && <Bar frac={hud.timeFrac} color="cyan" style={{ top: `calc(var(--safe-top) + ${TIMER_TOP}px)`, left: '5%', width: '90%', height: TIMER_H }} />}
+            {run && <TimerClock frac={hud.timeFrac} />} {/* timer: **cyan strip while the timer runs** -> **TimerClock at the top left for the whole run**, reason: new timer art (timer-ui.png / timer-hand-ui.png), mechanism: timeFrac is 1 between words, so the hand rests at 12 */}
         </>
     )
 }
-// the matching quest's HUD: the cyan strip drains over the 5 s timer, a wrong
+// the matching quest's HUD: the timer clock goes round once over the 5 s timer, a wrong
 // gap flashes red; under it a card with the sentence's English and the
 // player's word
 
@@ -78,7 +69,7 @@ function Training({ w, h, onLeave, questions, sensitivity, tutorial, timerMs, ch
     return (
         <>
             <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} zoomRequest={zoomRequest} fitWhole /> {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: same as dodgeQuestIsland.tsx */}
-            <Hud getHud={t.getHud} getSentence={t.getSentence} />
+            <Hud getHud={t.getHud} getSentence={t.getSentence} run={t.phase === 'play'} />
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>
     )

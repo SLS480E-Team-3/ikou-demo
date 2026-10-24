@@ -1,6 +1,7 @@
 'use client'
 
 import { CSSProperties, ReactNode, useEffect, useReducer, useRef, useState } from "react"
+import TimerClock from "./timerClock"
 import GameScene, { questBg } from "./gameScene"
 import { TrainingHud, useQuestZoom } from "./training"
 import { PLAYER_GAP, center, useDodgeTraining } from "./dodgeTraining"
@@ -15,7 +16,6 @@ import { HIROKO_DX, useMergedTalk, useTutorial, type TutorialProps } from "./tut
 
 const TIMER_H = 8
 const HP_H = TIMER_H * 3
-const TIMER_TOP = 40
 const HP_BOTTOM = 40
 const HP_COLOR = '#ff8a8a'
 const FLASH_MS = 300
@@ -32,7 +32,7 @@ function Bar({ frac, color, style }: { frac: number, color: string, style: CSSPr
 }
 // bordered track with a left-anchored fill, as in questIsland.tsx
 
-function Hud({ getHud }: { getHud: () => TrainingHud }) {
+function Hud({ getHud, run }: { getHud: () => TrainingHud, run: boolean }) { // props: **+ run**, mechanism: the clock shows for the whole level, also between hp hits
     const [, force] = useReducer((n: number) => n + 1, 0)
     useEffect(() => {
         let raf = requestAnimationFrame(function loop() { force(); raf = requestAnimationFrame(loop) })
@@ -41,17 +41,16 @@ function Hud({ getHud }: { getHud: () => TrainingHud }) {
     const hud = getHud()
     const flash = FLASH_OPACITY * Math.max(0, 1 - (performance.now() - hud.hurtAt) / FLASH_MS)
     const overlay = flash > 0 && <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: HP_COLOR, opacity: flash, pointerEvents: 'none' }} />
-    if (!hud.playing) return overlay || null
     return (
         <>
             {overlay}
-            <Bar frac={hud.timeFrac} color="cyan" style={{ top: `calc(var(--safe-top) + ${TIMER_TOP}px)`, left: '5%', width: '90%', height: TIMER_H }} /> {/* top: **TIMER_TOP** -> **safe-top + TIMER_TOP**, reason: the Home Screen web app draws under a see-through status bar, mechanism: --safe-top is 0 outside it, so Safari / desktop are unchanged */}
-            <Bar frac={hud.hp / hud.maxHP} color={HP_COLOR} style={{ bottom: `calc(var(--safe-bottom) + ${HP_BOTTOM}px)`, left: '5%', width: '90%', height: HP_H }} /> {/* bottom: **HP_BOTTOM** -> **safe-bottom + HP_BOTTOM**, reason: same, for the home indicator */}
+            {run && <TimerClock frac={hud.timeFrac} />} {/* timer: **cyan strip** -> **TimerClock at the top left**, reason: new timer art, mechanism: shown for the whole level (run); hud.playing still gates the hp bar */}
+            {hud.playing && <Bar frac={hud.hp / hud.maxHP} color={HP_COLOR} style={{ bottom: `calc(var(--safe-bottom) + ${HP_BOTTOM}px)`, left: '5%', width: '90%', height: HP_H }} />} {/* bottom: **HP_BOTTOM** -> **safe-bottom + HP_BOTTOM**, reason: same, for the home indicator */}
         </>
     )
 }
 // questIsland.tsx's HUD: its own rAF re-reads getHud() each frame for the
-// damage flash, the cyan timer strip and the hp bar
+// damage flash, the timer clock (top left, the whole level) and the hp bar
 
 function Training({ w, h, onLeave, kana, sensitivity, tutorial, children }: { w: number, h: number, onLeave: () => void, kana?: string, sensitivity?: number, tutorial?: TutorialProps, children?: ReactNode }) { // props: **no tutorial** -> **tutorial?**, mechanism: passed on to useTutorial (seen / onSeen); undefined = no account, so Hiroko asks every time
     const t = useDodgeTraining({ w, h, onLeave, kana })
@@ -75,7 +74,7 @@ function Training({ w, h, onLeave, kana, sensitivity, tutorial, children }: { w:
     return (
         <>
             <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} zoomRequest={zoomRequest} fitWhole /> {/* fitWhole: **off** -> **on**, reason: zoom out until the entire dojo can be seen, mechanism: GameScene's zoom-out floor becomes the whole-dojo fit */} {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: tut.onChoice / onTalkEnd return true when the event was Hiroko's, so || skips the training's (which would read npc 1 as Elena); talk carries whichever request changed last */}
-            <Hud getHud={t.getHud} />
+            <Hud getHud={t.getHud} run={t.phase === 'play1' || t.phase === 'play2'} />
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>
     )

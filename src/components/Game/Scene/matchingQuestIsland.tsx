@@ -1,12 +1,13 @@
 'use client'
 
-import { CSSProperties, ReactNode, useEffect, useReducer, useRef, useState } from "react"
+import { ReactNode, useEffect, useReducer, useRef, useState } from "react"
+import TimerClock from "./timerClock"
 import GameScene, { questBg } from "./gameScene"
 import { TrainingHud, useQuestZoom } from "./training"
 import { center } from "./dodgeTraining"
 import { PLAYER_GAP, useMatchingTraining } from "./matchingTraining"
 import { matchingNpcs } from "../npcs/npcs"
-import { BUBBLE_BG, BUBBLE_BOARDER, BUBBLE_BORDER_W } from "../Entity/dialogBubble"
+import { BUBBLE_BG } from "../Entity/dialogBubble"
 import { stopBgm } from "../Entity/voice"
 import type { KosoadoGroup } from "../kosoado"
 import { HIROKO_DX, useMergedTalk, useTutorial, type TutorialProps } from "./tutorial" // imports: **+ tutorial**, mechanism: Hiroko's matching tutorial, as in dodgeQuestIsland.tsx
@@ -14,22 +15,12 @@ import { HIROKO_DX, useMergedTalk, useTutorial, type TutorialProps } from "./tut
 // square dojo with Ryuuko at its center, the three areas and her word bubble
 // from useMatchingTraining, Hiroko's tutorial in 'intro', and no hp bar
 
-const TIMER_H = 8
-const TIMER_TOP = 40
 const FLASH_MS = 300
 const FLASH_OPACITY = 0.6
 const FLASH_COLOR = '#ff8a8a'
-// same timer strip and damage flash as dodgeQuestIsland.tsx
+// same damage flash as dodgeQuestIsland.tsx
 
-function Bar({ frac, color, style }: { frac: number, color: string, style: CSSProperties }) {
-    return (
-        <div style={{ position: 'absolute', zIndex: 2, boxSizing: 'border-box', border: `${BUBBLE_BORDER_W}px solid ${BUBBLE_BOARDER}`, background: BUBBLE_BG, pointerEvents: 'none', ...style }}>
-            <div style={{ width: `${frac * 100}%`, height: '100%', background: color }} />
-        </div>
-    )
-}
-
-function Hud({ getHud }: { getHud: () => TrainingHud }) {
+function Hud({ getHud, run }: { getHud: () => TrainingHud, run: boolean }) { // props: **+ run**, mechanism: the clock shows for the whole run, not only while the timer runs
     const [, force] = useReducer((n: number) => n + 1, 0)
     useEffect(() => {
         let raf = requestAnimationFrame(function loop() { force(); raf = requestAnimationFrame(loop) })
@@ -40,12 +31,13 @@ function Hud({ getHud }: { getHud: () => TrainingHud }) {
     return (
         <>
             {flash > 0 && <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: FLASH_COLOR, opacity: flash, pointerEvents: 'none' }} />}
-            {hud.playing && <Bar frac={hud.timeFrac} color="cyan" style={{ top: `calc(var(--safe-top) + ${TIMER_TOP}px)`, left: '5%', width: '90%', height: TIMER_H }} />}
+            {run && <TimerClock frac={hud.timeFrac} />} {/* timer: **cyan strip while the timer runs** -> **TimerClock at the top left for the whole run**, reason: new timer art (timer-ui.png / timer-hand-ui.png), mechanism: timeFrac is 1 between words, so the hand rests at 12 */}
         </>
     )
 }
-// dodge's HUD without the hp bar: the cyan strip drains over the 3 s pick
-// timer (hud.playing is only true then), and a wrong pick flashes red
+// dodge's HUD without the hp bar: the timer clock (timerClock.tsx) at the top
+// left for the whole run, its hand going round once over the pick timer, and
+// a wrong pick flashes red
 
 function Training({ w, h, onLeave, group, sensitivity, tutorial, timerMs, children }: { w: number, h: number, onLeave: () => void, group?: KosoadoGroup, sensitivity?: number, tutorial?: TutorialProps, timerMs?: number, children?: ReactNode }) { // props: **+ timerMs?**, reason: shorter timers for harder quests, mechanism: passed to the training hook; left out = the quest's default timer // props: **+ tutorial?**, mechanism: passed on to useTutorial; undefined = no account, so Hiroko asks every time // props: **+ group**, mechanism: passed to useMatchingTraining
     const t = useMatchingTraining({ w, h, onLeave, group, timerMs })
@@ -62,7 +54,7 @@ function Training({ w, h, onLeave, group, sensitivity, tutorial, timerMs, childr
     return (
         <>
             <GameScene bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} zoomRequest={zoomRequest} /> {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: same as dodgeQuestIsland.tsx */}
-            <Hud getHud={t.getHud} />
+            <Hud getHud={t.getHud} run={t.phase === 'play'} />
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>
     )
