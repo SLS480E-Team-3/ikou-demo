@@ -14,7 +14,7 @@ This repo is a bare-minimum copy of `../ikko`, made 2026-10-22.
 - Islands 2–5's own quests: each is planned in a GitHub issue ("Island 2" #2 … "Island 5" #5). Until then they have 5 placeholder quests each (あ–お) that run the dodge quest
 - New NPC lines / voice for islands 2–5 (they reuse island 1's five NPCs and food talk)
 - BGM entries for islands 2–5
-- Quest islands other than dodge: catch (`questIsland`), shoot, door (left/right), particle
+- Quest islands other than dodge: catch (`questIsland`), door (left/right), particle (shoot is back as a dev screen, `/MobDev/QuestShoot`, not on the quest page)
 - `verbs.ts`, `particles.ts`, `islands/quests/island_2_quests.ts`
 - `python/` (dialog/voice generation), `ikko-vision.pdf`, `.claude/skills`
 

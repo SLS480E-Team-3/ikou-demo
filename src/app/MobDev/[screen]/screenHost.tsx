@@ -24,6 +24,11 @@ const SCREENS: Record<ScreenType, ComponentType<ScreenProps>> = {
         const C = m.DodgeQuestIsland
         return ({ sensitivity, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C sensitivity={sensitivity} onLeave={onLeave} /></>
     }), { ssr: false }), // adapter: **quest only** -> **+ Tint BUBBLE_BG**, mechanism: the quest island's cream fills the strips Safari leaves around the page
+    QuestShoot: dynamic(() => Promise.all([import("@/components/Game/Scene/shootQuestIsland"), import("@/components/Game/Entity/dialogBubble")]).then(([m, { BUBBLE_BG }]) => {
+        const C = m.ShootQuestIsland
+        return ({ sensitivity, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C sensitivity={sensitivity} onLeave={onLeave} /></>
+    }), { ssr: false }),
+    // QuestShoot: the shooting quest (copied from ../ikko), same adapter as QuestDodge
     QuestMatching: dynamic(() => Promise.all([import("@/components/Game/Scene/matchingQuestIsland"), import("@/components/Game/Entity/dialogBubble")]).then(([m, { BUBBLE_BG }]) => {
         const C = m.MatchingQuestIsland
         return ({ sensitivity, group, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C group={isKosoadoGroup(group) ? group : undefined} sensitivity={sensitivity} onLeave={onLeave} /></>

@@ -25,6 +25,7 @@ The hand's art points 53.13 degrees clockwise from 12 (`HAND_DEG` turns it back)
 | Topic | File | Where |
 | --- | --- | --- |
 | quests | `src/components/Game/Scene/dodgeQuestIsland.tsx` | `Hud` (phases `play1` / `play2`) |
+| quests | `src/components/Game/Scene/shootQuestIsland.tsx` | `Hud` (phases `play1` / `play2`) |
 | quests | `src/components/Game/Scene/matchingQuestIsland.tsx` | `Hud` (phase `play`) |
 | quests | `src/components/Game/Scene/inBetweenQuestIsland.tsx` | `Hud` (phase `play`) |
 | quests | `src/components/Game/Scene/bridgeQuestIsland.tsx` | `Hud` (phase `play`) |
