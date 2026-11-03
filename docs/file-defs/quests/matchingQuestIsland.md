@@ -35,4 +35,6 @@ Measures the box once, makes a square island one screen tall, stops any BGM and 
 
 `Training` wires `useMatchingTraining`, `matchingNpcs` and Hiroko (`useTutorial`, index 1 right of Ryuuko in `intro`) into `GameScene`; `Hud` re-reads `getHud()` each frame for the timer clock (top left for the whole run, `run` = phase `play`) and the red flash on a wrong pick.
 
+`tintEdges={BUBBLE_BG}`: GameScene paints the page background (which iOS 26 blurs behind the status bar) with the ground color at the screen's top row, or `BUBBLE_BG` while that row is above the room, the shell's cream (issue #13).
+
 When a run starts (phase becomes `play`), `useQuestZoom` (training.ts) sends GameScene a `zoomRequest` for `QUEST_ZOOM` (0.55), so the run starts zoomed out; pinch / scroll still work.

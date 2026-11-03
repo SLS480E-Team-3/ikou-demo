@@ -74,7 +74,7 @@ function Training({ w, h, onLeave, group, sensitivity, tutorial, timerMs, childr
     // of Ryuuko: the player starts at her right
     return (
         <>
-            <GameScene bgProps={{ ...bg, x: start.x, y: start.y, sections: [...(bg.sections ?? []), spikeSection(w, h)] }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} zoomRequest={zoomRequest} onTap={t.phase === 'play' ? noTap : undefined} walkPath={t.walkPath} onArrive={t.onArrive} cameraFocus={t.cameraFocus} fitWhole />
+            <GameScene tintEdges={BUBBLE_BG} /* tintEdges: **none** -> **BUBBLE_BG**, reason: the status bar showed the /Game green or a fixed Tint over the quest (issue #13), mechanism: GameScene paints the page with the ground color at the screen top, or this cream while the top row is above the room */ bgProps={{ ...bg, x: start.x, y: start.y, sections: [...(bg.sections ?? []), spikeSection(w, h)] }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} zoomRequest={zoomRequest} onTap={t.phase === 'play' ? noTap : undefined} walkPath={t.walkPath} onArrive={t.onArrive} cameraFocus={t.cameraFocus} fitWhole />
             <Hud getHud={t.getHud} stroke={{ start: t.strokeStart, move: t.strokeMove, end: t.strokeEnd }} run={t.phase === 'play'} />
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>

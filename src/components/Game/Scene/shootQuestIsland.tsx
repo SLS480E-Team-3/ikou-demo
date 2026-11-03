@@ -1,0 +1,112 @@
+'use client'
+
+import { CSSProperties, ReactNode, useEffect, useReducer, useRef, useState } from "react"
+import TimerClock from "./timerClock"
+import GameScene, { questBg } from "./gameScene"
+import { TrainingHud, useQuestZoom } from "./training"
+import { RYUUKO_W, RYUUKO_H, useShootTraining } from "./shootTraining" // imports: **useShootTraining** -> **+ RYUUKO_W, RYUUKO_H**, mechanism: her 1.5x size
+import { questIslandNpcs } from "../npcs/npcs"
+import { BUBBLE_BG, BUBBLE_BOARDER, BUBBLE_BORDER_W } from "../Entity/dialogBubble"
+import { stopBgm /* , QUEST_BGM, playBgm */ } from "../Entity/voice"
+import { HIROKO_DX, useMergedTalk, useTutorial, type TutorialProps } from "./tutorial"
+// Hiroko's quest tutorial (tutorial.ts): her NPC, her choice / talk-end
+// handlers and her talk request for this quest type
+// copied from ../ikko's shootQuestIsland.tsx: runs useShootTraining and hands
+// its onShoot to GameScene. The HUD, zoom and status-bar tint follow
+// dodgeQuestIsland.tsx
+
+const TIMER_H = 8
+const HP_H = TIMER_H * 3
+const HP_BOTTOM = 40
+const HP_COLOR = '#ff8a8a'
+const FLASH_MS = 300
+const FLASH_OPACITY = 0.6
+// same HUD sizes / colors / damage flash as dodgeQuestIsland.tsx (copied, since
+// that file doesn't export them)
+
+function Bar({ frac, color, style }: { frac: number, color: string, style: CSSProperties }) {
+    return (
+        <div style={{ position: 'absolute', zIndex: 2, boxSizing: 'border-box', border: `${BUBBLE_BORDER_W}px solid ${BUBBLE_BOARDER}`, background: BUBBLE_BG, pointerEvents: 'none', ...style }}>
+            <div style={{ width: `${frac * 100}%`, height: '100%', background: color }} />
+        </div>
+    )
+}
+// bordered track with a left-anchored fill, as in dodgeQuestIsland.tsx
+
+function Hud({ getHud, run }: { getHud: () => TrainingHud, run: boolean }) {
+    const [, force] = useReducer((n: number) => n + 1, 0)
+    useEffect(() => {
+        let raf = requestAnimationFrame(function loop() { force(); raf = requestAnimationFrame(loop) })
+        return () => cancelAnimationFrame(raf)
+    }, [])
+    const hud = getHud()
+    const flash = FLASH_OPACITY * Math.max(0, 1 - (performance.now() - hud.hurtAt) / FLASH_MS)
+    const overlay = flash > 0 && <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: HP_COLOR, opacity: flash, pointerEvents: 'none' }} />
+    return (
+        <>
+            {overlay}
+            {run && <TimerClock frac={hud.timeFrac} />}
+            {hud.playing && <Bar frac={hud.hp / hud.maxHP} color={HP_COLOR} style={{ bottom: `calc(var(--safe-bottom) + ${HP_BOTTOM}px)`, left: '5%', width: '90%', height: HP_H }} />}
+        </>
+    )
+}
+// dodgeQuestIsland.tsx's HUD: its own rAF re-reads getHud() each frame for the
+// damage flash, the timer clock (top left, the whole level) and the hp bar,
+// which is Ryuuko's hp in this quest
+
+function Training({ w, h, onLeave, kana, sensitivity, tutorial, children }: { w: number, h: number, onLeave: () => void, kana?: string, sensitivity?: number, tutorial?: TutorialProps, children?: ReactNode }) {
+    const t = useShootTraining({ w, h, onLeave, kana })
+    const tut = useTutorial('shoot', t.phase === 'intro', tutorial)
+    const talk = useMergedTalk(t.talkRequest, tut.talkRequest)
+    const zoomRequest = useQuestZoom(t.phase === 'play1' || t.phase === 'play2')
+    // zoom out to QUEST_ZOOM (0.55) when a run starts
+    // Hiroko's tutorial is live only in 'intro'; talk is the one talkRequest
+    // GameScene gets (the training's or Hiroko's, whichever changed last).
+    // Both hooks run at the top level, never inside the JSX
+    const npcs = questIslandNpcs(w, h, t.phase, t.getHud().target, t.failedLevel).map((n, i) => {
+        if (i !== 0) return n
+        const x = n.ent.x
+        return { ...n, ent: { ...n.ent, w: RYUUKO_W, h: RYUUKO_H, get x() { return t.getRyuukoX() ?? x } } }
+    })
+    // Ryuuko (index 0) is a shallow copy at 1.5x, so npcs.ts keeps the default
+    // size. GameScene force()-renders every frame and reads ent.x each time
+    // (drawing, solids, camera), so the getter hands it her walking x without
+    // re-rendering Training; outside a level it falls back to npcs.ts's x
+    const cast = t.phase === 'intro' ? [...npcs, tut.hiroko((npcs[0].ent.x ?? 0) + HIROKO_DX, npcs[0].ent.y ?? 0)] : npcs
+    // intro only: Hiroko appended as index 1 (HIROKO), HIROKO_DX px right of
+    // the resized Ryuuko; Elena is never out in 'intro'
+    // const bgm = t.phase === 'success' || t.phase === 'again' ? QUEST_BGM.clear : t.phase === 'fail' ? QUEST_BGM.fail : undefined
+    // useEffect(() => bgm ? playBgm(bgm) : undefined, [bgm]) // music: off like dodgeQuestIsland.tsx; uncomment to bring it back
+    return (
+        <>
+            <GameScene tintEdges={BUBBLE_BG} bgProps={questBg(w, h)} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} wallY={t.wallY} playerLabel={t.playerLabel} sensitivity={sensitivity} onShoot={t.onShoot} zoomRequest={zoomRequest} />
+            <Hud getHud={t.getHud} run={t.phase === 'play1' || t.phase === 'play2'} />
+            {(t.phase === 'success' || t.phase === 'again') && children}
+        </>
+    )
+}
+// dodgeQuestIsland.tsx's Training on useShootTraining, plus wallY and onShoot:
+// GameScene calls onShoot on Space, a quick tap, or a second finger while the
+// stick is held; it fires only during a level and returns false otherwise, so
+// Space still talks outside one. tut handlers run first and return true when
+// the event was Hiroko's, so || skips the training's
+
+export function ShootQuestIsland({ onLeave, kana, sensitivity, tutorial, children }: { onLeave: () => void, kana?: string, sensitivity?: number, tutorial?: TutorialProps, children?: ReactNode }) {
+    const boxRef = useRef<HTMLDivElement>(null)
+    const [size, setSize] = useState<{ w: number, h: number }>()
+    useEffect(() => { stopBgm() }, [])
+    useEffect(() => {
+        const box = boxRef.current
+        const w = box?.clientWidth || window.innerWidth
+        const h = box?.clientHeight || window.innerHeight
+        setSize({ w: Math.round(w * 2), h: Math.round(h * 1.5) })
+    }, [])
+    return (
+        <div ref={boxRef} style={{ position: 'relative', width: '100%', height: '100%', background: BUBBLE_BG }}>
+            {size && <Training w={size.w} h={size.h} onLeave={onLeave} kana={kana} sensitivity={sensitivity} tutorial={tutorial}>{children}</Training>}
+        </div>
+    )
+}
+// same shell as DodgeQuestIsland (stops any island BGM, measures the box once
+// after mount), but the island is 2x wide / 1.5x tall as in ikko, so Ryuuko has
+// room to walk and blocks have room above the wall
