@@ -4,6 +4,7 @@ import { playSpot, throwSpot, type TrainingPhase } from "../Scene/training"; // 
 import type { MtPhase } from "../Scene/matchingTraining"; // import: **+ MtPhase**, mechanism: matchingNpcs picks Ryuuko's lines by the matching quest's phase
 import type { IbPhase } from "../Scene/inBetweenTraining";
 import { bridgeLayout, type BrPhase } from "../Scene/bridgeTraining"; // import: **+ bridgeLayout, BrPhase**, mechanism: bridgeNpcs stands Ryuuko at the bridge quest's bottom-left spot // import: **+ IbPhase**, mechanism: inBetweenNpcs picks Ryuuko's lines by the in-between quest's phase
+import { startSpot, type LrPhase } from "../Scene/leftRightTraining"; // import: **+ startSpot, LrPhase**, mechanism: leftRightNpcs, copied from ../ikko for the door quest
 import { KANA_ROWS } from "../kana";
 import { sceneDialog, toNPCProps, type NpcScript } from "./toNPCProps";
 import jordi from "./dialogs/jordi.json";
@@ -124,6 +125,45 @@ export const questIslandNpcs = (w: number, h: number, phase: TrainingPhase, targ
 // stands 60 px right of Ryuuko. Choices: Ryuuko はい starts / retries a
 // level, Elena はい leaves the quest island, いいえ ends the talk
 
+
+//npcs in the Left or Right quest
+const LR_CONDITION: Record<Exclude<LrPhase, 'play'>, { ryuuko: Condition, elena: Condition }> = {
+    intro: { ryuuko: 'lr-intro', elena: 'lr-intro' },
+    success: { ryuuko: 'lr-clear', elena: 'lr-clear' },
+    fail: { ryuuko: 'lr-fail', elena: 'lr-fail' },
+    again: { ryuuko: 'lr-intro', elena: 'lr-clear' },
+}
+// which ryuuko.json / elena.json entry each phase says. In 'again' Ryuuko
+// repeats her rules talk (its はい starts a new run) while Elena keeps her
+// おめでとう！ / go-back offer. Elena isn't out in 'intro', so hers is unused
+
+const PAIR_DX = 28
+const FAIL_BEHIND = 64
+// in the narrow hall (184 px inside the walls) two NPCs stand PAIR_DX left
+// and right of a point; on fail they appear FAIL_BEHIND px behind (below) the
+// player, who is touching a door then, so above would be on the doors
+
+export const leftRightNpcs = (w: number, h: number, phase: LrPhase, failAt?: { x: number, y: number }): NPCProps[] => { // args: **(w, h, phase)** -> **+ failAt**, mechanism: where the player stood at 0 hp
+    if (phase === 'play') return []
+    const c = LR_CONDITION[phase]
+    if (phase === 'intro') {
+        const s = startSpot(w, h)
+        return [toNPCProps(ryuuko, s.x, s.y, sceneDialog(ryuuko, c.ryuuko))]
+    }
+    const at = phase === 'fail' && failAt ? { x: w / 2, y: failAt.y + FAIL_BEHIND } : startSpot(w, h) // spot: **endSpot (room past the doors)** -> **startSpot**, mechanism: the hall is one room; after a clear the player comes back out at the spawn and the pair stands in front of them
+    return [
+        toNPCProps(ryuuko, at.x - PAIR_DX, at.y, sceneDialog(ryuuko, c.ryuuko)),
+        toNPCProps(elena, at.x + PAIR_DX, at.y, sceneDialog(elena, c.elena)),
+    ]
+}
+// the Left or Right cast for one phase (docs/scenes/hallway.md):
+// - intro: Ryuuko alone at startSpot, just in front of the spawning player
+// - play: no one (spec D-9: Ryuuko is off screen)
+// - success / again: Ryuuko (index 0) and Elena (index 1) side by side in
+//   front of the spawn (startSpot), where the player lands after the black screen
+// - fail: the same pair FAIL_BEHIND px down the hall from where the player
+//   stood at 0 hp (they turn around to talk), centered in the hall so both stay inside the walls
+// position: **Ryuuko at signSpot, Elena 60 px right (40 / -40 in fail)** -> **startSpot / endSpot / behind failAt, ±PAIR_DX**, reason: the hallway redesign, mechanism: the hall is too narrow for a 60 px offset, so the pair is centered
 
 const MT_CONDITION: Record<MtPhase, Condition> = { intro: 'mt-intro', play: 'level1-start', success: 'level2-clear', again: 'mt-intro' }
 export const matchingNpcs = (w: number, h: number, phase: MtPhase): NPCProps[] => {

@@ -28,6 +28,8 @@ Measures the box once, makes a square island one screen tall, stops any BGM and 
 | Topic | File | Where |
 | --- | --- | --- |
 | mobile-testing | `src/app/MobDev/[screen]/screenHost.tsx` | `SCREENS.QuestBridge` (`?group=`) |
+| quests | `src/components/Game/Scene/QuestScene.tsx` | `Grouped` when `questType` is `bridge` |
+| mobile-testing | `src/components/Game/Scene/islandPreview.tsx` | saved-island quest with `quest_type` `bridge` |
 
 ### `Training`, `Hud`, `Bar` (local)
 

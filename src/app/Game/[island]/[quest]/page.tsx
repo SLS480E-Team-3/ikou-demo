@@ -46,10 +46,9 @@ export default async function QuestPage({ // name: **QuestScene** -> **QuestPage
     // user_quests has no write policies; the read goes back through RLS
 
     const group = groupOf(full.target)
-    const questType = full.quest_type === 'matching' && group ? 'matching' : islandQuestType(islandId) // questType: **always islandQuestType** -> **matching when the row says so**, reason: the こそあど matching quests (issue #8), mechanism: quest_type matching with a { group } target runs MatchingQuestIsland; everything else stays dodge
-    // quests.quest_type (set in /IslandEditor) is not read here yet: this
-    // demo only has the dodge quest, so every quest runs (and saves its
-    // tutorial row) as dodge
+    const questType = (full.quest_type === 'matching' || full.quest_type === 'bridge') && group ? full.quest_type : full.quest_type === 'shoot' || full.quest_type === 'door' ? full.quest_type : islandQuestType(islandId) // questType: **+ door**, mechanism: QuestScene runs LeftRightQuestIsland and the tutorial row is saved as 'door' // questType: **+ bridge with a { group }**, mechanism: QuestScene runs BridgeQuestIsland and the tutorial row is saved as 'bridge' // questType: **matching or dodge** -> **+ shoot when the row says so**, mechanism: QuestScene runs ShootQuestIsland and the tutorial row is saved as 'shoot' // questType: **always islandQuestType** -> **matching when the row says so**, reason: the こそあど matching quests (issue #8), mechanism: quest_type matching with a { group } target runs MatchingQuestIsland; everything else stays dodge
+    // quests.quest_type (set in /IslandEditor) is read for matching, bridge,
+    // shoot and door only; every other type runs (and saves its tutorial row) as dodge
     const { data: tutorial } = await supabase.from('user_tutorials')
         .select('quest_type').eq('user_id', user.id).eq('quest_type', questType).maybeSingle() // quest_type: **'original'** -> **islandQuestType(islandId)**, mechanism: island 2 runs the dodge quest, so its tutorial row is 'dodge'
     // has Hiroko already asked this player about this quest type's tutorial?

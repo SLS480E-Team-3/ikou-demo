@@ -15,7 +15,7 @@ Builds each NPC from `NPC_SCRIPTS[npc]` at its saved spot. With a `questId` that
 | Name | Type | Meaning |
 | --- | --- | --- |
 | `npcs` | `FileNpc[]` | saved NPCs |
-| `quests` | `LayoutQuest[]` | `{ id, title, kana, target?, status? }` of the island |
+| `quests` | `LayoutQuest[]` | `{ id, title, kana, target?, timer_ms?, quest_type?, status? }` of the island |
 
 **Output:** `NPCProps[]`
 

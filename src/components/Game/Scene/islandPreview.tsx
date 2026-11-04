@@ -8,6 +8,9 @@ import { ISLAND_MAPS } from "@/components/Game/islands"
 import { BUBBLE_BG } from "@/components/Game/Entity/dialogBubble"
 import { npcsForRow } from "@/components/Game/npcs/npcs"
 import { DodgeQuestIsland } from "@/components/Game/Scene/dodgeQuestIsland"
+import { LeftRightQuestIsland } from "@/components/Game/Scene/leftRightQuestIsland" // imports: **+ LeftRightQuestIsland**, mechanism: saved-island quests with quest_type door
+import { ShootQuestIsland } from "@/components/Game/Scene/shootQuestIsland" // imports: **+ ShootQuestIsland**, mechanism: saved-island quests with quest_type shoot
+import { BridgeQuestIsland } from "@/components/Game/Scene/bridgeQuestIsland" // imports: **+ BridgeQuestIsland**, mechanism: saved-island quests with quest_type bridge
 import { MatchingQuestIsland } from "@/components/Game/Scene/matchingQuestIsland" // imports: **+ MatchingQuestIsland, groupOf**, mechanism: a saved quest with a { group } target opens the matching quest
 import { groupOf, type KosoadoGroup } from "@/components/Game/kosoado" // imports: **none** -> **DodgeQuestIsland**, mechanism: island 2's NPCs open the dodge quest, like QuestScene
 import { ISLAND_NPCS } from "@/components/Game/npcs"
@@ -19,7 +22,7 @@ import { useTileWalk } from "@/components/Game/islands/tiles"
 // MobileTester's 'game scene' page, moved here so /MobDev/GameScene?island=N can show it
 // full-screen on a phone too
 
-type QuestPick = { kana: string, group?: KosoadoGroup, timerMs?: number } // pick: **+ timerMs**, mechanism: the quest's timer_ms from the editor
+type QuestPick = { kana: string, group?: KosoadoGroup, timerMs?: number, shoot?: boolean, bridge?: boolean, door?: boolean } // pick: **+ door**, mechanism: quest_type door opens LeftRightQuestIsland // pick: **+ bridge**, mechanism: quest_type bridge with a group opens BridgeQuestIsland // pick: **+ shoot**, mechanism: quest_type shoot opens ShootQuestIsland // pick: **+ timerMs**, mechanism: the quest's timer_ms from the editor
 // the quest a はい opens without login: the dodge quest with kana, or the
 // matching quest when group is set
 
@@ -78,7 +81,7 @@ export default function IslandPreview({ sensitivity, start = 1, tint = false, ve
     if (inQuest) return (
         <div style={{ position: 'relative', width: '100%', height: '100%', background: BUBBLE_BG }}>
             {pageTint}
-            {inQuest.group ? <MatchingQuestIsland key={`quest-${island}`} group={inQuest.group} timerMs={inQuest.timerMs} sensitivity={sensitivity} onLeave={() => setInQuest(false)} /> : <DodgeQuestIsland key={`quest-${island}`} kana={inQuest.kana} sensitivity={sensitivity} onLeave={() => setInQuest(false)} />} {/* scene: **dodge** -> **matching when the quest has a group**, mechanism: QuestPick.group */} {/* scene: **by islandQuestType** -> **DodgeQuestIsland**, mechanism: the demo ships island 1 only */}
+            {inQuest.group && inQuest.bridge ? <BridgeQuestIsland key={`quest-${island}`} group={inQuest.group} timerMs={inQuest.timerMs} sensitivity={sensitivity} onLeave={() => setInQuest(false)} /> : inQuest.group ? <MatchingQuestIsland key={`quest-${island}`} group={inQuest.group} timerMs={inQuest.timerMs} sensitivity={sensitivity} onLeave={() => setInQuest(false)} /> : inQuest.door ? <LeftRightQuestIsland key={`quest-${island}`} sensitivity={sensitivity} onLeave={() => setInQuest(false)} /> : inQuest.shoot ? <ShootQuestIsland key={`quest-${island}`} kana={inQuest.kana} sensitivity={sensitivity} onLeave={() => setInQuest(false)} /> : <DodgeQuestIsland key={`quest-${island}`} kana={inQuest.kana} sensitivity={sensitivity} onLeave={() => setInQuest(false)} />} {/* scene: **dodge** -> **door when quest_type is door**, mechanism: QuestPick.door */} {/* scene: **dodge** -> **shoot when quest_type is shoot**, mechanism: QuestPick.shoot */} {/* scene: **matching for every group** -> **bridge when quest_type is bridge**, mechanism: QuestPick.bridge */} {/* scene: **dodge** -> **matching when the quest has a group**, mechanism: QuestPick.group */} {/* scene: **by islandQuestType** -> **DodgeQuestIsland**, mechanism: the demo ships island 1 only */}
             {/* <span style={{ position: 'absolute', top: 16, left: 16, zIndex: 2 }}>quest island (from island {island})</span> */} {/* label: **shown** -> **commented out**, mechanism: hidden for now; uncomment to show which island the quest came from */}
         </div>
     )
@@ -132,7 +135,7 @@ function SavedIsland({ file, quests, tint, sensitivity, onQuest, done, onClear }
     const tiles = file.tiles ?? []
     const pickOf = (id?: number): QuestPick => {
         const q = quests.find(x => x.id === id)
-        return { kana: (typeof q?.target === 'string' && q.target) || q?.kana || 'あ', group: groupOf(q?.target), timerMs: q?.timer_ms ?? undefined }
+        return { kana: (typeof q?.target === 'string' && q.target) || q?.kana || 'あ', group: groupOf(q?.target), timerMs: q?.timer_ms ?? undefined, shoot: q?.quest_type === 'shoot', bridge: q?.quest_type === 'bridge', door: q?.quest_type === 'door' }
     } // kanaOf: **kana** -> **pickOf: kana + group**, mechanism: a { group } target opens the matching quest
     const tileWalk = useTileWalk(tiles, tiles.map(t => done.includes(t.id)), t => {
         onClear(t.id)

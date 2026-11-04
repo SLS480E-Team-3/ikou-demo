@@ -131,7 +131,7 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
     const [msg, setMsg] = useState('')
     useEffect(() => { setMsg('') }, [quest])
     const door = d.quest_type === 'door'
-    const matching = d.quest_type === 'matching' || d.level === 'koSoADo' // matching: **type matching** -> **+ level koSoADo**, reason: a koSoADo quest's target is one of the four groups, mechanism: the group dropdown shows and saves { group } for either
+    const matching = d.quest_type === 'matching' || d.quest_type === 'bridge' || d.level === 'koSoADo' // matching: **+ type bridge**, mechanism: the bridge quest also trains one こそあど group, so it gets the group dropdown and saves { group } // matching: **type matching** -> **+ level koSoADo**, reason: a koSoADo quest's target is one of the four groups, mechanism: the group dropdown shows and saves { group } for either
     const [group, setGroup] = useState<KosoadoGroup>(groupOf(quest?.target) ?? 'pronoun')
     // the matching quest's こそあど group, saved as target { group }
 
@@ -154,7 +154,7 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
                     <option value="">(none)</option>
                     {[...LEVELS, ...(d.level && !LEVELS.includes(d.level) ? [d.level] : [])].map(l => <option key={l}>{l}</option>)}
                 </select></label> {/* level: **free text + datalist** -> **select of LEVELS**, reason: pick a level instead of typing it, mechanism: a saved level not in LEVELS (e.g. the old meaning) is kept as an extra option so it isn't lost */}
-                <label>type <select value={d.quest_type ?? 'dodge'} onChange={e => { const t = e.target.value as EditorQuest['quest_type']; setD({ ...d, quest_type: t, ...(t === 'matching' && (!d.level || d.level === 'vocab') ? { level: 'koSoADo' } : {}) }) }}> {/* onChange: **+ level koSoADo on matching**, mechanism: issue #7's level for these quests; only replaces an empty or the default vocab level */}
+                <label>type {/* onChange: **koSoADo on matching** -> **+ on bridge**, mechanism: same level for both group quests */}<select value={d.quest_type ?? 'dodge'} onChange={e => { const t = e.target.value as EditorQuest['quest_type']; setD({ ...d, quest_type: t, ...((t === 'matching' || t === 'bridge') && (!d.level || d.level === 'vocab') ? { level: 'koSoADo' } : {}) }) }}> {/* onChange: **+ level koSoADo on matching**, mechanism: issue #7's level for these quests; only replaces an empty or the default vocab level */}
                     {QUEST_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select></label>
                 <label>points <input type="number" value={d.reward_points ?? 0} onChange={e => setD({ ...d, reward_points: n(e.target.value) })} style={{ width: 52 }} /></label>
@@ -171,7 +171,7 @@ function QuestForm({ islandId, quest, onSaved }: { islandId: number, quest?: Edi
             </select></label>} {/* target: **free text** -> **select of KANA_ROWS**, reason: pick the kana instead of typing it, mechanism: one optgroup per row with romaji; a saved target outside the rows is kept as an extra option */}
             <label style={row}>timer <input type="number" min={500} step={500} value={d.timer_ms ?? ''} placeholder="default" onChange={e => setD({ ...d, timer_ms: e.target.value ? Math.max(500, n(e.target.value)) : null })} style={{ width: 80 }} /> ms</label>
             {/* timer: **+**, reason: shorten the pick timer to make a quest harder, mechanism: saved as quests.timer_ms and passed to the quest island as timerMs; empty = null = the quest's default (matching 10000, in-between 5000), floor 500 ms */}
-            {d.quest_type !== 'dodge' && !matching && <span style={{ color: '#a60' }}>Only dodge and matching quests run in this demo.</span>}
+            {d.quest_type !== 'dodge' && d.quest_type !== 'shoot' && !door && !matching && <span style={{ color: '#a60' }}>Only dodge, shoot, matching, bridge and door quests run in this demo.</span>} {/* note: **+ door**, mechanism: QuestScene / islandPreview run LeftRightQuestIsland for quest_type door */} {/* note: **+ bridge**, mechanism: a bridge quest has matching set, so the warning already skips it */} {/* note: **dodge and matching** -> **+ shoot**, mechanism: QuestScene / islandPreview run ShootQuestIsland for quest_type shoot, so the warning skips it */}
             <div style={row}><button onClick={save} disabled={!d.title}>{quest ? 'Save quest' : 'Create quest + assign'}</button>{msg && <span>{msg}</span>}</div>
         </div>
     )

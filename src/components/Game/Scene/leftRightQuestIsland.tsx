@@ -1,0 +1,118 @@
+'use client'
+
+import { CSSProperties, ReactNode, useEffect, useReducer, useRef, useState } from "react"
+import GameScene, { DOJO_WALL, hallBg } from "./gameScene" // import: **questBg** -> **hallBg**, mechanism: the quest is a long hallway now, not the dojo room
+import { TrainingHud } from "./training"
+import { FEET_H, HALL_W, hallH, spawnSpot, useLeftRightTraining } from "./leftRightTraining"
+import { leftRightNpcs } from "../npcs/npcs"
+import { BUBBLE_BG, BUBBLE_BOARDER, BUBBLE_BORDER_W } from "../Entity/dialogBubble"
+import { stopBgm /* , QUEST_BGM, playBgm */ } from "../Entity/voice"
+import { HIROKO_DX, useMergedTalk, useTutorial, type TutorialProps } from "./tutorial"
+// Hiroko's quest tutorial (tutorial.ts): her NPC, her choice / talk-end
+// handlers and her talk request for this quest type
+// a copy of dodgeQuestIsland.tsx for the Left or Right quest: a long, narrow
+// hallway island, the cast from leftRightNpcs, the doors as a wall and no
+// timer strip.
+// dodgeQuestIsland.tsx itself is untouched. Copied from ../ikko into the
+// demo; the status-bar tint and safe-area offsets follow dodgeQuestIsland.tsx
+
+const HP_H = 24
+const HP_BOTTOM = 40
+const HP_COLOR = '#ff8a8a'
+const SIGN_TOP = 8 // top: **40** -> **8**, reason: the sign sat too low, over the doors, mechanism: screen px from the top edge
+const SIGN_W = 160
+// the word sign's distance from the screen top and its minimum width (screen px)
+const FLASH_MS = 300
+const FLASH_OPACITY = 0.6
+// same hp bar size / color / damage flash as dodgeQuestIsland.tsx (copied,
+// since that file doesn't export them). HP_H is dodge's TIMER_H * 3 written
+// out, since there is no timer strip here
+
+function Bar({ frac, color, style }: { frac: number, color: string, style: CSSProperties }) {
+    return (
+        <div style={{ position: 'absolute', zIndex: 2, boxSizing: 'border-box', border: `${BUBBLE_BORDER_W}px solid ${BUBBLE_BOARDER}`, background: BUBBLE_BG, pointerEvents: 'none', ...style }}>
+            <div style={{ width: `${frac * 100}%`, height: '100%', background: color }} />
+        </div>
+    )
+}
+// bordered track with a left-anchored fill, as in dodgeQuestIsland.tsx
+
+type Sign = { verb: string, romaji: string, sub: string }
+
+function Hud({ getHud, getFade, getSign }: { getHud: () => TrainingHud, getFade: () => number, getSign: () => Sign | undefined }) {
+    const [, force] = useReducer((n: number) => n + 1, 0)
+    useEffect(() => {
+        let raf = requestAnimationFrame(function loop() { force(); raf = requestAnimationFrame(loop) })
+        return () => cancelAnimationFrame(raf)
+    }, [])
+    const hud = getHud()
+    const flash = FLASH_OPACITY * Math.max(0, 1 - (performance.now() - hud.hurtAt) / FLASH_MS)
+    const fade = getFade()
+    const overlay = <>
+        {flash > 0 && <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: HP_COLOR, opacity: flash, pointerEvents: 'none' }} />}
+        {fade > 0 && <div style={{ position: 'absolute', inset: 0, zIndex: 4, background: 'black', opacity: fade, pointerEvents: 'none' }} />}
+    </>
+    // fade: **none** -> **black screen over everything (zIndex 4)**, reason: going through a door is a transition, mechanism: the hook's getFade() opacity read each frame by this rAF, so it also covers the HP bar and the damage flash
+    if (!hud.playing) return overlay
+    const sign = getSign()
+    return (
+        <>
+            {overlay}
+            {sign && (
+                <div style={{ position: 'absolute', zIndex: 2, top: `calc(var(--safe-top) + ${SIGN_TOP}px)`, left: '50%', transform: 'translateX(-50%)', minWidth: SIGN_W, padding: '6px 12px', boxSizing: 'border-box', border: `${BUBBLE_BORDER_W}px solid ${BUBBLE_BOARDER}`, background: BUBBLE_BG, color: BUBBLE_BOARDER, display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.15, pointerEvents: 'none' }}>
+                    <div style={{ fontSize: 32 }}>{sign.verb}</div>
+                    <div style={{ fontSize: 14 }}>{sign.romaji}</div>
+                    <div style={{ fontSize: 12, height: 14, whiteSpace: 'nowrap' }}>{sign.sub}</div>
+                </div>
+            )}
+            {/* top: **SIGN_TOP** -> **safe-top + SIGN_TOP**, reason: the Home Screen app draws under the status bar, mechanism: --safe-top from globals.css */} {/* sign: **world px on the back wall (leftRightTraining renderWorld)** -> **fixed at the top of the screen**, reason: the doors fill the back wall now, mechanism: getSign() read each frame by this rAF, in the dialog bubble's colors and border, centered; screen px, so it doesn't scale with the zoom */}
+            <Bar frac={hud.hp / hud.maxHP} color={HP_COLOR} style={{ bottom: `calc(var(--safe-bottom) + ${HP_BOTTOM}px)`, left: '5%', width: '90%', height: HP_H }} /> {/* bottom: **HP_BOTTOM** -> **safe-bottom + HP_BOTTOM**, reason: the home indicator, mechanism: as in dodgeQuestIsland.tsx */}
+        </>
+    )
+}
+// dodgeQuestIsland.tsx's HUD without the cyan timer strip: its own rAF
+// re-reads getHud() each frame for the damage flash and the hp bar
+
+function Training({ w, h, onLeave, sensitivity, tutorial, children }: { w: number, h: number, onLeave: () => void, sensitivity?: number, tutorial?: TutorialProps, children?: ReactNode }) { // props: **no tutorial** -> **tutorial?**, mechanism: passed on to useTutorial (seen / onSeen); undefined = no account, so Hiroko asks every time
+    const t = useLeftRightTraining({ w, h, onLeave })
+    const tut = useTutorial('door', t.phase === 'intro', tutorial)
+    const talk = useMergedTalk(t.talkRequest, tut.talkRequest)
+    // Hiroko's tutorial is live only in 'intro'; talk is the one talkRequest
+    // GameScene gets (the training's or Hiroko's, whichever changed last).
+    // Both hooks run at the top level, never inside the JSX
+    const npcs = leftRightNpcs(w, h, t.phase, t.failAt)
+    const cast = t.phase === 'intro' ? [...npcs, tut.hiroko((npcs[0].ent.x ?? 0) + HIROKO_DX, npcs[0].ent.y ?? 0)] : npcs
+    // the cast from leftRightNpcs (moved out of the JSX); intro only: Hiroko
+    // appended as index 1 (HIROKO), HIROKO_DX px right of Ryuuko (npcs[0]);
+    // Elena is never out in 'intro'
+    // const bgm = t.phase === 'success' || t.phase === 'again' ? QUEST_BGM.clear : t.phase === 'fail' ? QUEST_BGM.fail : undefined
+    // useEffect(() => bgm ? playBgm(bgm) : undefined, [bgm]) // music: **on** -> **commented out**, reason: BGM and quest clear / fail music turned off for now, mechanism: uncomment to bring it back
+    return (
+        <>
+            <GameScene tintEdges={DOJO_WALL} /* tintEdges: **none** -> **DOJO_WALL**, reason: the status bar showed another scene's color (issue #13), mechanism: GameScene paints the page with the ground color at the screen top, or the wall brown that fills the box around the hall */ bgProps={hallBg(w, h, spawnSpot(w, h).y)} npcs={cast} feetH={FEET_H} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} /> {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: tut.onChoice / onTalkEnd return true when the event was Hiroko's, so || skips the training's (which would read npc 1 as Elena); talk carries whichever request changed last */}
+            <Hud getHud={t.getHud} getFade={t.getFade} getSign={t.getSign} />
+            {(t.phase === 'success' || t.phase === 'again') && children}
+        </>
+    )
+}
+// dodgeQuestIsland.tsx's Training on useLeftRightTraining. bg: **questBg** ->
+// **hallBg**, mechanism: the one-room hall; its solid back wall, with the
+// doors in it, stops the player (no wallY). bgProps.y (the player's spawn / camera start) is
+// spawnSpot's y. The cast comes from leftRightNpcs with failAt. BGM: clear on success / again, fail on
+// fail; children fill the success slot
+
+export function LeftRightQuestIsland({ onLeave, sensitivity, tutorial, children }: { onLeave: () => void, sensitivity?: number, tutorial?: TutorialProps, children?: ReactNode }) { // props: **no tutorial** -> **tutorial?**, mechanism: passed through Training to useTutorial
+    const boxRef = useRef<HTMLDivElement>(null)
+    const [size, setSize] = useState<{ w: number, h: number }>()
+    useEffect(() => { stopBgm() }, [])
+    useEffect(() => {
+        setSize({ w: HALL_W, h: hallH() }) // size: **h x h (square)** -> **HALL_W x hallH()**, mechanism: the hall is only as wide as the doors, and short: CORRIDOR px from the spawn to the doors
+    }, [])
+    return (
+        <div ref={boxRef} style={{ position: 'relative', width: '100%', height: '100%', background: DOJO_WALL }}> {/* background: **BUBBLE_BG (cream)** -> **DOJO_WALL**, reason: the screen above and below the small room showed cream, mechanism: the same brown as the room's side walls, so the room sits in its walls */}
+            {size && <Training w={size.w} h={size.h} onLeave={onLeave} sensitivity={sensitivity} tutorial={tutorial}>{children}</Training>} {/* props: **no tutorial** -> **tutorial**, mechanism: Hiroko's seen / onSeen reach useTutorial */}
+        </div>
+    )
+}
+// same shell as DodgeQuestIsland (stops any island BGM, measures the box once
+// after mount); the island is the hallway: HALL_W wide, hallH() tall

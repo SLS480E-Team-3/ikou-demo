@@ -27,6 +27,8 @@ Measures the box once, sizes the island, stops any BGM and renders the training.
 | Topic | File | Where |
 | --- | --- | --- |
 | mobile-testing | `src/app/MobDev/[screen]/screenHost.tsx` | `SCREENS.QuestShoot` |
+| quests | `src/components/Game/Scene/QuestScene.tsx` | `Island` when `questType` is `shoot` |
+| mobile-testing | `src/components/Game/Scene/islandPreview.tsx` | saved-island quest with `quest_type` `shoot` |
 
 ### `Training`, `Hud`, `Bar` (local)
 

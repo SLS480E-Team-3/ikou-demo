@@ -22,7 +22,7 @@ export type EditorQuest = {
 // one quests row as the editor reads and writes it (snake_case = the db
 // columns). id left out = not created yet
 
-export const QUEST_TYPES: QuestKind[] = ['dodge', 'matching', 'door', 'original', 'shoot', 'particle'] // types: **+ matching**, mechanism: the こそあど quest (issue #8) runs in the demo
+export const QUEST_TYPES: QuestKind[] = ['dodge', 'matching', 'bridge', 'door', 'original', 'shoot', 'particle'] // types: **+ bridge**, mechanism: the bridge quest runs in the demo with a こそあど group like matching // types: **+ matching**, mechanism: the こそあど quest (issue #8) runs in the demo
 export const LEVELS = ['vocab', 'koSoADo', 'particles', 'basicPhrases'] // levels: **vocab, koSoADo, meaning** -> **issue #7's list**, reason: the level field is a selector now, mechanism: final is left out for now
-// the choices offered in the quest form. Only dodge and matching run in this demo; the
+// the choices offered in the quest form. Only dodge, shoot, matching, bridge and door run in this demo; the
 // others are kept so a quest can already be set up for them

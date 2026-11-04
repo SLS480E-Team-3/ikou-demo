@@ -17,7 +17,7 @@
 | `tint` | `boolean` | paint the page behind the scene (full-screen /MobDev) |
 | `ver` | `number?` | saved version of the start island; missing = newest, 0 = code |
 
-**Output:** JSX. With a saved version: `SavedIsland` plus the island buttons, labelled with the file name. A load error adds a red `load failed (...)` line under the label. Without one: the code's map, NPCs by kana row (row buttons), labelled `code (islands.ts)`. はい swaps in `DodgeQuestIsland`.
+**Output:** JSX. With a saved version: `SavedIsland` plus the island buttons, labelled with the file name. A load error adds a red `load failed (...)` line under the label. Without one: the code's map, NPCs by kana row (row buttons), labelled `code (islands.ts)`. はい swaps in `DodgeQuestIsland`, or `MatchingQuestIsland` for a `{ group }` target (`BridgeQuestIsland` when `quest_type` is `bridge`), or `ShootQuestIsland` for `quest_type` `shoot`, or `LeftRightQuestIsland` for `door`.
 
 **Side effects:** fetches `/api/IslandEditor` (versions, file) and `/api/IslandEditor/quests` for the island on screen, again on prev / next.
 

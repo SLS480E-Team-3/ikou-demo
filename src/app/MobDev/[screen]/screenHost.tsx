@@ -42,6 +42,11 @@ const SCREENS: Record<ScreenType, ComponentType<ScreenProps>> = {
         const C = m.BridgeQuestIsland
         return ({ sensitivity, group, onLeave }: ScreenProps) => <><Tint color={BUBBLE_BG} /><C group={isKosoadoGroup(group) ? group : undefined} sensitivity={sensitivity} onLeave={onLeave} /></>
     }), { ssr: false }),
+    QuestDoor: dynamic(() => Promise.all([import("@/components/Game/Scene/leftRightQuestIsland"), import("@/components/Game/Scene/gameScene")]).then(([m, { DOJO_WALL }]) => {
+        const C = m.LeftRightQuestIsland
+        return ({ sensitivity, onLeave }: ScreenProps) => <><Tint color={DOJO_WALL} /><C sensitivity={sensitivity} onLeave={onLeave} /></>
+    }), { ssr: false }),
+    // QuestDoor: the Left or Right quest (copied from ../ikko); Tint is the wall brown its shell fills the screen with
     // QuestBridge: the bridge quest (draw a bridge over the spikes to the right meaning), ?group= like QuestMatching
     // QuestInBetween: the in-between test quest (issue #12, 私は＿さかながすき), same adapter as QuestDodge
     SignUp: dynamic(() => import("@/app/SignUp/page"), { ssr: false }),

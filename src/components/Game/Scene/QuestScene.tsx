@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation"
 import QuestComplete from "../questComplete"
 import { MatchingQuestIsland } from "./matchingQuestIsland" // imports: **+ MatchingQuestIsland**, mechanism: a quest with quest_type matching runs it
 import type { KosoadoGroup } from "../kosoado"
+import { BridgeQuestIsland } from "./bridgeQuestIsland" // imports: **+ BridgeQuestIsland**, mechanism: a quest with quest_type bridge runs it
+import { LeftRightQuestIsland } from "./leftRightQuestIsland" // imports: **+ LeftRightQuestIsland**, mechanism: a quest with quest_type door runs it
+import { ShootQuestIsland } from "./shootQuestIsland" // imports: **+ ShootQuestIsland**, mechanism: a quest with quest_type shoot runs it
 import { DodgeQuestIsland } from "./dodgeQuestIsland" // imports: **QuestIsland only** -> **+ DodgeQuestIsland**, mechanism: island 2's NPCs open the dodge quest
 import type { QuestKind } from "./tutorial"
 
@@ -30,18 +33,19 @@ export type QuestSceneProps = {
 
 export default function QuestScene({ islandId, quest, cleared, tutorialSeen, questType, group, timerMs }: QuestSceneProps) { // params: **+ timerMs**, mechanism: handed to MatchingQuestIsland // params: **+ group**, mechanism: handed to MatchingQuestIsland // params: **no questType** -> **+ questType**, mechanism: picks the island component and the tutorial type below // params: **no tutorialSeen** -> **+ tutorialSeen**, mechanism: passed on to QuestIsland as tutorial.seen
     const router = useRouter()
-    const Island = DodgeQuestIsland // Island: **dodge / door / particle / catch by questType** -> **DodgeQuestIsland**, mechanism: the demo ships island 1 only
+    const Island = questType === 'door' ? LeftRightQuestIsland : questType === 'shoot' ? ShootQuestIsland : DodgeQuestIsland // Island: **+ door**, mechanism: LeftRightQuestIsland takes no kana, so kana below is left out for it // Island: **always dodge** -> **shoot for quest_type shoot**, mechanism: both take onLeave, kana, tutorial and children, so the JSX below is shared // Island: **dodge / door / particle / catch by questType** -> **DodgeQuestIsland**, mechanism: the demo ships island 1 only
     // all take onLeave, tutorial and children (the success slot); kana is
     // passed only to the two kana quests, since the door quest teaches verbs
-    const kana = { kana: quest.kana ?? undefined }
+    const kana = questType === 'door' ? {} : { kana: quest.kana ?? undefined } // kana: **always** -> **none for door**, mechanism: the door quest teaches verbs
     const tutorial = {
         seen: tutorialSeen,
         onSeen: () => { fetch('/api/Tutorial', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: questType }) }).catch(() => {}) },
     } // tutorial: **inline on the dodge Island** -> **one object**, mechanism: the matching quest gets the same seen / onSeen
     const complete = !cleared && <div style={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 3 }}><QuestComplete quest={quest.id} points={quest.reward_points} /></div>
-    if (questType === 'matching') return (
+    const Grouped = questType === 'bridge' ? BridgeQuestIsland : MatchingQuestIsland // Grouped: **matching only** -> **bridge for quest_type bridge**, mechanism: both take group, timerMs, onLeave, tutorial and children, so they share the JSX below
+    if (questType === 'matching' || questType === 'bridge') return (
         <div style={{ position: 'relative', width: '100%', height: '100lvh' }}>
-            <MatchingQuestIsland group={group} timerMs={timerMs} onLeave={() => router.push(`/Game/${islandId}`)} tutorial={tutorial}>{complete}</MatchingQuestIsland> {/* props: **no tutorial** -> **tutorial**, mechanism: Hiroko's matching tutorial, saved like the dodge one */}
+            <Grouped group={group} timerMs={timerMs} onLeave={() => router.push(`/Game/${islandId}`)} tutorial={tutorial}>{complete}</Grouped> {/* props: **no tutorial** -> **tutorial**, mechanism: Hiroko's matching tutorial, saved like the dodge one */}
             <div style={{ position: 'absolute', top: 'calc(var(--safe-top) + 16px)', left: 16, zIndex: 2, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <Link href={`/Game/${islandId}`}>{'<-'}</Link>
                 {cleared && <div style={{ fontSize: '0.75rem' }}>cleared!</div>}

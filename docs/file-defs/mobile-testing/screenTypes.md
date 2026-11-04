@@ -8,7 +8,7 @@
 
 ### `SCREEN_TYPES`
 
-Readonly tuple of the screen-type names (QuestMatching added for issue #8, QuestInBetween for issue #12, QuestBridge for the bridge quest, QuestShoot for the shooting quest) (PascalCase).
+Readonly tuple of the screen-type names (QuestMatching added for issue #8, QuestInBetween for issue #12, QuestBridge for the bridge quest, QuestShoot for the shooting quest, QuestDoor for the Left or Right quest) (PascalCase).
 
 **Used in**
 
