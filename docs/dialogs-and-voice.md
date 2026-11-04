@@ -209,6 +209,16 @@ lines:
 
 To draft a yaml: `python dialog.py write "ordering ramen" --speakers jordi,shuto --lines 6`.
 
+### Rendering from this demo
+
+The demo has no `python/`; clips are rendered with `../ikko/python` and moved here. `docs/voice/ryuuko_bridge.yaml` (the 16 こそあど words, 正しい方に橋をかけて！, 正解！) and `docs/voice/missing_lines.yaml` (every json line that had no mp3: Ryuuko's mt-intro / ib-intro, Hiroko's matching / in-between / bridge tutorials) were rendered this way:
+
+```bash
+cd ../ikko/python && .venv/bin/python dialog.py render ../../ikou-demo/docs/voice/ryuuko_bridge.yaml --per-line
+```
+
+The clips land in `../ikko/public/dialog/ryuuko/`: move them to this repo's `public/dialog/ryuuko/` and delete `../ikko/python/output/<scene>.mp3`, so ikko is left unchanged. The cache in `../ikko/python/.cache/` stays (gitignored).
+
 ### check
 
 1. Every printed `-> public/dialog/...` file exists.

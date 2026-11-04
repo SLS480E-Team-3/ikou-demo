@@ -68,7 +68,7 @@ function Training({ w, h, onLeave, group, sensitivity, tutorial, timerMs, childr
     // zoom out to QUEST_ZOOM (0.55) when a run starts
     const start = bridgeLayout(w, h).start
     const bg = questBg(w, h)
-    const npcs = bridgeNpcs(w, h, t.phase)
+    const npcs = bridgeNpcs(w, h, t.phase, t.getWord) // args: **+ t.getWord**, mechanism: Ryuuko's greeting during the run is the current word
     const cast = t.phase === 'intro' ? [...npcs, tut.hiroko((npcs[0].ent.x ?? 0) - HIROKO_DX, npcs[0].ent.y ?? 0)] : npcs
     // Hiroko as in matchingQuestIsland.tsx (index 1, in 'intro' only), but left
     // of Ryuuko: the player starts at her right

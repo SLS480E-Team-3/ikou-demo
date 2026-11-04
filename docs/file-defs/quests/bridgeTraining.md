@@ -19,13 +19,13 @@ Hook that runs the quest's phases (`intro` → `play` → `success` → `again`)
 | `group` | `KosoadoGroup?` | which four words the run asks (default `pronoun`); words and meanings from `questionsFor` (matchingTraining.ts) |
 | `timerMs` | `number?` | the drawing timer in ms (default 10000) |
 
-**Output:** `{ phase, onTick, onChoice, onTalkEnd, onArrive, renderWorld, getHud, cameraFocus, playerLabel, talkRequest, moveRequest, walkPath, strokeStart, strokeMove, strokeEnd }`. `walkPath` / `onArrive` go to GameScene's tap mode; `strokeStart(x, y)` / `strokeMove(x, y)` / `strokeEnd()` take screen px from the shell's drawing layer. `getHud().playing` is true only while drawing; `getHud().blackAt` is when the last blackout began. `cameraFocus()` gives the camera point during `ask` / `draw` (halfway between the areas' top and the player's feet, so both fit on a phone), else `undefined` (follow the player).
+**Output:** `{ phase, onTick, onChoice, onTalkEnd, onArrive, renderWorld, getHud, cameraFocus, playerLabel, talkRequest, moveRequest, walkPath, strokeStart, strokeMove, strokeEnd, getWord }`. `getWord()` gives the word being asked (`{ word, romaji }`), which `bridgeNpcs` shows as Ryuuko's in-range greeting during play. `walkPath` / `onArrive` go to GameScene's tap mode; `strokeStart(x, y)` / `strokeMove(x, y)` / `strokeEnd()` take screen px from the shell's drawing layer. `getHud().playing` is true only while drawing; `getHud().blackAt` is when the last blackout began. `cameraFocus()` gives the camera point during `ask` / `draw` (halfway between the areas' top and the player's feet, so both fit on a phone), else `undefined` (follow the player).
 
 **Side effects:** plays Ryuuko's `mt-correct` / `mt-wrong` clips and the damage sound; moves the player to the start before each word and after a fall.
 
 **Rules**
 - A stroke that doesn't end inside an area is wiped; the player may draw again while the timer lasts.
-- The bridge is `[player's feet, ...stroke]`. Right area: walked to the end. Wrong area: walked to where it first crosses the middle of the spikes (interpolated), then the player drops `DROP_PX`, the screen blacks out, and once they land they go back to the start; the same word comes back after `BLACK_MS`.
+- The bridge is `[player's feet, ...stroke]`. Right area: walked to the end. Wrong area: walked to where it first crosses the middle of the spikes (interpolated), then the player drops `DROP_PX`, the screen blacks out, and once they land they go back to the start. When the blackout clears (`BLACK_MS`), Ryuuko says 違うわよ！ (bubble + voice, at least `RESULT_MS` or the clip's length), then the same word comes back.
 - Time out while drawing = wrong (blackout, no walk).
 - After the last word the player is moved back to the start (the spikes are solid outside the run), then `success`.
 - Screen → world px: an invisible div in `renderWorld` covers the world, and its `getBoundingClientRect` carries the camera's offset and zoom.
@@ -38,7 +38,7 @@ Hook that runs the quest's phases (`intro` → `play` → `success` → `again`)
 
 ### `bridgeLayout`
 
-The quest's places in world px: `areas` (3 boxes, centered over the player's start, `AREA_TOP` above the center), `gap` (the spike strip, wall to wall, 4 rows of 44 px), `ryuuko` and `start` (centers, bottom left of the dojo).
+The quest's places in world px: `areas` (3 boxes, centered on the dojo's middle, `AREA_TOP` above the center), `gap` (the spike strip, wall to wall, 4 rows of 44 px), `ryuuko` and `start` (centers, bottom left of the dojo).
 
 **Input:** `w`, `h` (`number`). **Output:** `{ areas, gap, ryuuko, start }`.
 

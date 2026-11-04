@@ -1,0 +1,56 @@
+scene: ryuuko_bridge
+lines:
+  - speaker: ryuuko
+    text: これ
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: それ
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: あれ
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: どれ
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: この
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: その
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: あの
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: どの
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: こう
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: そう
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: ああ
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: どう
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: こんな
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: そんな
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: あんな
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: どんな
+    style: read just this one word, clear model pronunciation
+  - speaker: ryuuko
+    text: 正しい方に橋をかけて！
+    style: confident trainer, explaining the rule with a challenge in her voice
+  - speaker: ryuuko
+    text: 正解！
+    style: quick and pleased, a short bright praise

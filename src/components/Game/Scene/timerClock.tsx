@@ -20,6 +20,12 @@ const TOP = 16
 // 53.13 degrees clockwise from 12, so it is turned back by that much). LEFT /
 // TOP: css px from the screen's top left (below the safe-area inset)
 
+export const CLOCK_LEFT = LEFT
+export const CLOCK_TOP = TOP
+export const CLOCK_SIZE = FACE_PX * SCALE
+// the clock's box in css px (from the safe-area top left), so a quest HUD can
+// put things beside it
+
 export default function TimerClock({ frac }: { frac: number }) {
     const deg = HAND_DEG + 360 * (1 - Math.min(1, Math.max(0, frac)))
     return (

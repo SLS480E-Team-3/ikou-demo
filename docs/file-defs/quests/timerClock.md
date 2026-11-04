@@ -29,3 +29,12 @@ The hand's art points 53.13 degrees clockwise from 12 (`HAND_DEG` turns it back)
 | quests | `src/components/Game/Scene/matchingQuestIsland.tsx` | `Hud` (phase `play`) |
 | quests | `src/components/Game/Scene/inBetweenQuestIsland.tsx` | `Hud` (phase `play`) |
 | quests | `src/components/Game/Scene/bridgeQuestIsland.tsx` | `Hud` (phase `play`) |
+
+## Exports (layout)
+
+`CLOCK_LEFT`, `CLOCK_TOP` (16, 16) and `CLOCK_SIZE` (140): the clock's box in css px from the safe-area top left.
+
+| Topic | File | Where |
+| --- | --- | --- |
+| quests | `src/components/Game/Scene/dodgeQuestIsland.tsx` | `Hud`: the catch counter right of the clock |
+| quests | `src/components/Game/Scene/shootQuestIsland.tsx` | `Hud`: the bullet stack under the clock |

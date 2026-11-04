@@ -1,7 +1,7 @@
 'use client'
 
 import { CSSProperties, ReactNode, useEffect, useReducer, useRef, useState } from "react"
-import TimerClock from "./timerClock"
+import TimerClock, { CLOCK_LEFT, CLOCK_SIZE, CLOCK_TOP } from "./timerClock" // imports: **+ CLOCK_LEFT, CLOCK_SIZE, CLOCK_TOP**, mechanism: the counter sits right of the clock
 import GameScene, { questBg } from "./gameScene"
 import { TrainingHud, useQuestZoom } from "./training"
 import { PLAYER_GAP, center, useDodgeTraining } from "./dodgeTraining"
@@ -20,8 +20,11 @@ const HP_BOTTOM = 40
 const HP_COLOR = '#ff8a8a'
 const FLASH_MS = 300
 const FLASH_OPACITY = 0.6
+const COUNTER_GAP = 8
+const COUNTER_FONT = 28
 // same HUD sizes / colors / damage flash as questIsland.tsx (copied, since
-// that file doesn't export them)
+// that file doesn't export them). COUNTER_GAP / COUNTER_FONT: css px between
+// the clock and the catch counter, and the counter's text size
 
 function Bar({ frac, color, style }: { frac: number, color: string, style: CSSProperties }) {
     return (
@@ -44,7 +47,9 @@ function Hud({ getHud, run }: { getHud: () => TrainingHud, run: boolean }) { // 
     return (
         <>
             {overlay}
-            {run && <TimerClock frac={hud.timeFrac} />} {/* timer: **cyan strip** -> **TimerClock at the top left**, reason: new timer art, mechanism: shown for the whole level (run); hud.playing still gates the hp bar */}
+            {run && <TimerClock frac={hud.timeFrac} />}
+            {run && <div style={{ position: 'absolute', zIndex: 2, left: `calc(var(--safe-left) + ${CLOCK_LEFT + CLOCK_SIZE + COUNTER_GAP}px)`, top: `calc(var(--safe-top) + ${CLOCK_TOP + CLOCK_SIZE / 2}px)`, transform: 'translateY(-50%)', padding: '4px 10px', boxSizing: 'border-box', border: `${BUBBLE_BORDER_W}px solid ${BUBBLE_BOARDER}`, background: BUBBLE_BG, color: BUBBLE_BOARDER, fontSize: COUNTER_FONT, lineHeight: 1, pointerEvents: 'none' }}>{hud.current}/{hud.quota}</div>}
+            {/* counter: **name tag over the player** -> **box right of the clock**, reason: the progress text sat on the player, mechanism: current / quota from getHud() in a dialog-bubble box, vertically centered on the clock, shown for the whole level like the clock */} {/* timer: **cyan strip** -> **TimerClock at the top left**, reason: new timer art, mechanism: shown for the whole level (run); hud.playing still gates the hp bar */}
             {hud.playing && <Bar frac={hud.hp / hud.maxHP} color={HP_COLOR} style={{ bottom: `calc(var(--safe-bottom) + ${HP_BOTTOM}px)`, left: '5%', width: '90%', height: HP_H }} />} {/* bottom: **HP_BOTTOM** -> **safe-bottom + HP_BOTTOM**, reason: same, for the home indicator */}
         </>
     )
@@ -73,7 +78,7 @@ function Training({ w, h, onLeave, kana, sensitivity, tutorial, children }: { w:
     // useEffect(() => bgm ? playBgm(bgm) : undefined, [bgm]) // music: **on** -> **commented out**, reason: BGM and quest clear / fail music turned off for now, mechanism: uncomment to bring it back
     return (
         <>
-            <GameScene tintEdges={BUBBLE_BG} /* tintEdges: **none** -> **BUBBLE_BG**, reason: the status bar showed the /Game green or a fixed Tint over the quest (issue #13), mechanism: GameScene paints the page with the ground color at the screen top, or this cream while the top row is above the room */ bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} zoomRequest={zoomRequest} fitWhole /> {/* fitWhole: **off** -> **on**, reason: zoom out until the entire dojo can be seen, mechanism: GameScene's zoom-out floor becomes the whole-dojo fit */} {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: tut.onChoice / onTalkEnd return true when the event was Hiroko's, so || skips the training's (which would read npc 1 as Elena); talk carries whichever request changed last */}
+            <GameScene tintEdges={BUBBLE_BG} /* tintEdges: **none** -> **BUBBLE_BG**, reason: the status bar showed the /Game green or a fixed Tint over the quest (issue #13), mechanism: GameScene paints the page with the ground color at the screen top, or this cream while the top row is above the room */ bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} sensitivity={sensitivity} zoomRequest={zoomRequest} fitWhole /> {/* playerLabel: **t.playerLabel (current/quota)** -> **none**, mechanism: the tag shows the player's name again; the count moved next to the timer (Hud) */} {/* fitWhole: **off** -> **on**, reason: zoom out until the entire dojo can be seen, mechanism: GameScene's zoom-out floor becomes the whole-dojo fit */} {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: tut.onChoice / onTalkEnd return true when the event was Hiroko's, so || skips the training's (which would read npc 1 as Elena); talk carries whichever request changed last */}
             <Hud getHud={t.getHud} run={t.phase === 'play1' || t.phase === 'play2'} />
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>

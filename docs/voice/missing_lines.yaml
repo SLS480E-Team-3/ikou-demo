@@ -1,0 +1,47 @@
+scene: missing_lines
+lines:
+  - speaker: hiroko_en
+    text: "Ryuuko gives you a Japanese word."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Three colored areas appear, each with an English meaning."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Stand in the area with the right meaning until the timer runs out."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Miss it and she asks the same word again."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Ryuuko tells you which Japanese word you are."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "A sentence with one word missing appears on the floor."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Stand in the gap where your word fits until the timer runs out."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Miss it and the same sentence comes back."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Three areas with English meanings wait across the spikes."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Draw a line from yourself to the right meaning before the timer runs out. You walk it as a bridge."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Pick the wrong one and the bridge breaks. You start over next to Ryuuko."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Draw with your finger. Pinch to zoom."
+    style: "calm, warm, clear"
+  - speaker: hiroko_en
+    text: "Draw with the mouse. Scroll to zoom."
+    style: "calm, warm, clear"
+  - speaker: ryuuko
+    text: "正しい色に入って！"
+    style: "confident trainer, explaining the rule with a challenge in her voice"
+  - speaker: ryuuko
+    text: "正しいところに立って！"
+    style: "confident trainer, explaining the rule with a challenge in her voice"

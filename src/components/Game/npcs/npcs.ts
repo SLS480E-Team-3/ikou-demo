@@ -1,5 +1,5 @@
 import { NPCProps } from "../Entity/npcRenderer";
-import type { Condition } from "../Entity/dialogBubble"; // import: **Dialog** -> **type Condition**, mechanism: the Dialogs are built in toNPCProps.ts now; this file only names the Quest Island scene's condition
+import type { Condition, Dialog } from "../Entity/dialogBubble"; // import: **+ Dialog**, mechanism: bridgeNpcs builds the word greeting // import: **Dialog** -> **type Condition**, mechanism: the Dialogs are built in toNPCProps.ts now; this file only names the Quest Island scene's condition
 import { playSpot, throwSpot, type TrainingPhase } from "../Scene/training"; // import: **+ LEVELS, QuestsLevel, ENT_W / ENT_H (entityRenderer)** -> **without**, mechanism: the level buttons are in ryuuko.json and the body size is set by toNPCProps
 import type { MtPhase } from "../Scene/matchingTraining"; // import: **+ MtPhase**, mechanism: matchingNpcs picks Ryuuko's lines by the matching quest's phase
 import type { IbPhase } from "../Scene/inBetweenTraining";
@@ -195,12 +195,14 @@ export const inBetweenNpcs = (w: number, h: number, phase: IbPhase): NPCProps[] 
 // ib-intro (stand where your word fits) as her rules talk and replay offer
 
 const BR_CONDITION: Record<BrPhase, Condition> = { intro: 'br-intro', play: 'level1-start', success: 'level2-clear', again: 'br-intro' }
-export const bridgeNpcs = (w: number, h: number, phase: BrPhase): NPCProps[] => {
+export const bridgeNpcs = (w: number, h: number, phase: BrPhase, getWord?: () => { word: string, romaji: string }): NPCProps[] => { // args: **+ getWord**, mechanism: Ryuuko's greeting during play is the word being asked
     const { x, y } = bridgeLayout(w, h).ryuuko
     const condition = BR_CONDITION[phase]
     const withElena = phase === 'success' || phase === 'again'
+    const wordGreeting: Dialog[] = phase === 'play' && getWord ? [{ condition: 'greeting', get jp() { return [getWord().word] }, get en() { return [getWord().romaji] }, get audio() { return [getWord().word] } }] : [] // audio: **'' (silent)** -> **the word's clip**, mechanism: public/dialog/ryuuko/<word>.mp3, rendered from docs/voice/ryuuko_bridge.yaml
+    // play: **level1-start's いくわよ！** -> **the word (romaji under it)**, reason: in range she should say the word (これ, それ, ...), mechanism: getters, so GameScene's per-frame render reads the current word without re-rendering the island; romaji, not the meaning, so the answer isn't given away
     return [
-        toNPCProps(ryuuko, x, y, sceneDialog(ryuuko, condition)),
+        toNPCProps(ryuuko, x, y, wordGreeting.length ? wordGreeting : sceneDialog(ryuuko, condition)),
         ...(withElena ? [toNPCProps(elena, x + 60, y, sceneDialog(elena, phase === 'again' ? 'retry' : condition))] : []),
     ]
 }

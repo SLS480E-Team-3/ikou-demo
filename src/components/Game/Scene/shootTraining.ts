@@ -27,7 +27,7 @@ const BULLET_W = 5
 const BULLET_H = 8
 const BULLET_SPEED = 500
 const BULLET_COLOR = 'red'
-const AMMO_MAX = 5
+export const AMMO_MAX = 5 // AMMO_MAX: **private** -> **exported**, mechanism: shootQuestIsland's HUD stacks up to this many bullet icons
 // a bullet is a 5 x 8 px red rectangle (world px) flying straight up at 500 px/s
 // AMMO_MAX: the most bullets the player can hold; a level starts with none
 
@@ -180,6 +180,7 @@ export function useShootTraining({ w, h, onLeave, kana = 'あ' }: { w: number, h
             if (overlaps(u.x, u.y, BULLET_W, BULLET_H, { x: ryuuko.x - RYUUKO_W / 2, y: ryuuko.y - RYUUKO_H / 2, w: RYUUKO_W, h: RYUUKO_H })) { // hitbox: **ENT_W x ENT_H** -> **RYUUKO_W x RYUUKO_H**, mechanism: matches her 1.5x body
                 hp.current--
                 current.current++
+                playSfx(DAMAGE_SFX) // hit: **silent** -> **damage sound**, mechanism: the same tookDamage.mp3 the wrong catch used, now on Ryuuko's hit
                 return false
             } // Ryuuko: **not a target** -> **hit costs her 1 hp**, mechanism: her body box (RYUUKO_W x RYUUKO_H centered on playSpot, where npcs.ts puts her in a level); current counts hits for the clear check
             return true
@@ -192,19 +193,16 @@ export function useShootTraining({ w, h, onLeave, kana = 'あ' }: { w: number, h
 
         blocks.current = blocks.current.filter(b => {
             if (b.x < 0 || b.x > w || b.y < 0 || b.y > h) return false
-            if (overlaps(player.x, player.y, player.w, player.h, { x: b.x - s / 2, y: b.y - s / 2, w: s, h: s })) {
-                if (b.kana === lv.target) ammo.current = Math.min(AMMO_MAX, ammo.current + 1) // right catch: **+1 score** -> **+1 bullet**, mechanism: capped at AMMO_MAX
-                else { // wrong catch: **-1 hp + flash + sound** -> **flash + sound only**, mechanism: hp is Ryuuko's now, so a wrong catch just warns
-                    hurtAt.current = performance.now()
-                    playSfx(DAMAGE_SFX)
-                }
+            if (b.kana === lv.target && overlaps(player.x, player.y, player.w, player.h, { x: b.x - s / 2, y: b.y - s / 2, w: s, h: s })) { // catch: **any block** -> **the target only**, reason: touching a wrong word should do nothing, mechanism: a wrong block skips this test, so it keeps flying with no flash, sound or voice
+                ammo.current = Math.min(AMMO_MAX, ammo.current + 1) // right catch: **+1 score** -> **+1 bullet**, mechanism: capped at AMMO_MAX
                 playLine(dialogUrl('ryuuko', b.kana))
                 return false
             }
             return true
         })
         // the player catch pass from useTraining, run on the blocks the
-        // bullets left: the target adds a bullet, anything else flashes
+        // bullets left: the target adds a bullet; the player passes through
+        // anything else
 
         if (hp.current <= 0) { // clear: **current >= quota** -> **Ryuuko's hp 0**, mechanism: maxHP (5) bullet hits on her body
             if (level === 0) { setPhase('levelUp'); talkTo(RYUUKO) }
@@ -284,9 +282,12 @@ export function useShootTraining({ w, h, onLeave, kana = 'あ' }: { w: number, h
     // her walking x during a level, undefined otherwise (then she stands where
     // npcs.ts puts her). shootQuestIsland reads it through a getter on her ent
 
+    const getAmmo = useCallback((): number => ammo.current, [])
+    // bullets the player holds right now, read each frame by the island's HUD
+
     const wallY = phase === 'play1' || phase === 'play2' ? throwSpot(w, h).y + WALL_GAP : undefined
 
-    return { phase, failedLevel, wallY, onTick, onChoice, onTalkEnd, renderWorld, getHud, playerLabel, talkRequest, moveRequest, onShoot, getRyuukoX } // return: **no failedLevel** -> **+ failedLevel**, mechanism: the level (0-based) that was lost, so questIslandNpcs can pick level1-fail or level2-fail
+    return { phase, failedLevel, wallY, onTick, onChoice, onTalkEnd, renderWorld, getHud, playerLabel, talkRequest, moveRequest, onShoot, getRyuukoX, getAmmo } // return: **+ getAmmo**, mechanism: the HUD's bullet stack under the clock // return: **no failedLevel** -> **+ failedLevel**, mechanism: the level (0-based) that was lost, so questIslandNpcs can pick level1-fail or level2-fail
 }
 // useTraining's return plus onShoot, which shootQuestIsland.tsx passes to
 // GameScene's onShoot prop

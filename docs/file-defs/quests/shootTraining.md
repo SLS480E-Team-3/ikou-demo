@@ -8,7 +8,7 @@
 
 ### `useShootTraining`
 
-Hook that runs the quest's phases (`TrainingPhase`, the same flow as `useTraining`). Catching the target gives a bullet (`AMMO_MAX` 5, a level starts with 0); catching a wrong block only flashes and plays the damage sound. Shooting a wrong block refunds a bullet. `maxHP` (5) hits on Ryuuko clear the level; the 60 s timer running out fails it. The player has no hp.
+Hook that runs the quest's phases (`TrainingPhase`, the same flow as `useTraining`). Catching the target gives a bullet (`AMMO_MAX` 5, a level starts with 0); touching a wrong block does nothing (it keeps flying). Shooting a wrong block refunds a bullet. Each bullet hit on Ryuuko plays the damage sound; `maxHP` (5) hits clear the level; the 60 s timer running out fails it. The player has no hp.
 
 **Input**
 
@@ -18,13 +18,14 @@ Hook that runs the quest's phases (`TrainingPhase`, the same flow as `useTrainin
 | `onLeave` | `() => void` | called on はい to Elena |
 | `kana` | `string?` | the target kana (default あ) |
 
-**Output:** `{ phase, failedLevel, wallY, onTick, onChoice, onTalkEnd, renderWorld, getHud, playerLabel, talkRequest, moveRequest, onShoot, getRyuukoX }`, passed to `GameScene` like the other trainings.
+**Output:** `{ phase, failedLevel, wallY, onTick, onChoice, onTalkEnd, renderWorld, getHud, playerLabel, talkRequest, moveRequest, onShoot, getRyuukoX, getAmmo }`, passed to `GameScene` like the other trainings.
 
 - `onShoot()`: fires from the player's top edge. Returns false outside a level, so Space talks and taps walk; returns true with no ammo, so nothing fires but the input is still used.
-- `playerLabel()`: ammo as `n/5`.
+- `playerLabel()`: ammo as `n/5` (no longer passed to GameScene).
+- `getAmmo()`: bullets held now; the island's HUD stacks that many `bullet.png` under the clock.
 - `getRyuukoX()`: her walking x during a level, undefined otherwise.
 
-**Side effects:** plays Ryuuko's kana clips and the damage sound; moves the player below Ryuuko at the start of a level.
+**Side effects:** plays Ryuuko's kana clip on a catch and the damage sound when she is hit; moves the player below Ryuuko at the start of a level.
 
 **Used in**
 
@@ -34,4 +35,4 @@ Hook that runs the quest's phases (`TrainingPhase`, the same flow as `useTrainin
 
 ## Exports (data)
 
-`RYUUKO_W`, `RYUUKO_H`: her 1.5x body size, used by the hitbox here and by `Training` to draw her.
+`RYUUKO_W`, `RYUUKO_H`: her 1.5x body size, used by the hitbox here and by `Training` to draw her. `AMMO_MAX` (5): the most bullets held, also the HUD stack's limit.

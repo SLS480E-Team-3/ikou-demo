@@ -2,7 +2,7 @@
 
 import { createElement, Fragment, useCallback, useEffect, useRef, useState } from "react"
 import { KANA_FONT, TargetBubble } from "@/components/Game/Entity/charBlock"
-import { lineMs, lineUrl, playLine, playSfx, preloadClips } from "@/components/Game/Entity/voice"
+import { dialogUrl, lineMs, lineUrl, playLine, playSfx, preloadClips } from "@/components/Game/Entity/voice" // imports: **+ dialogUrl**, mechanism: the word clips preloaded in startRun
 import { ENT_H } from "@/components/Game/Entity/entityRenderer"
 import { toDialogs } from "../npcs/toNPCProps"
 import ryuuko from "../npcs/dialogs/ryuuko.json"
@@ -91,7 +91,7 @@ export const spikeSection = (w: number, h: number): BgSection => ({ id: 'spikes'
 export const bridgeLayout = (w: number, h: number) => {
     const c = center(w, h)
     const start = { x: c.x + PLAYER_SPOT.dx, y: c.y + PLAYER_SPOT.dy }
-    const left = start.x - (AREA_W * 3 + AREA_GAP * 2) / 2
+    const left = c.x - (AREA_W * 3 + AREA_GAP * 2) / 2 // left: **centered on the player's start** -> **centered on the dojo**, reason: the areas sat left of the middle, mechanism: the three areas' row is centered on c.x; the player and Ryuuko keep their bottom-left spots
     return {
         areas: [0, 1, 2].map(i => ({ x: left + i * (AREA_W + AREA_GAP), y: c.y - AREA_TOP, w: AREA_W, h: AREA_H })),
         gap: { x: DOJO_SIDE, y: c.y - GAP_TOP, w: w - DOJO_SIDE * 2, h: GAP_TOP - GAP_BOTTOM },
@@ -189,7 +189,7 @@ export function useBridgeTraining({ w, h, onLeave, group = 'pronoun', timerMs = 
 
     const startRun = useCallback(() => {
         current.current = 0
-        preloadClips([...(['mt-correct', 'mt-wrong'] as RunLine[]).flatMap(c => { const d = lineOf(c); return d?.audio[0] ? lineUrl('ryuuko', d.audio[0]).split('\n') : [] }), DAMAGE_SFX])
+        preloadClips([...(['mt-correct', 'mt-wrong'] as RunLine[]).flatMap(c => { const d = lineOf(c); return d?.audio[0] ? lineUrl('ryuuko', d.audio[0]).split('\n') : [] }), ...questionsRef.current.list.map(q => dialogUrl('ryuuko', q.word)), DAMAGE_SFX]) // preload: **+ the run's word clips**, mechanism: Ryuuko's greeting says each word, so they are decoded before the first ask
         setPhase('play')
         ask()
     }, [setPhase, ask])
@@ -204,7 +204,13 @@ export function useBridgeTraining({ w, h, onLeave, group = 'pronoun', timerMs = 
     }
 
     const failAt = useRef(0)
-    const failSaid = useRef(0)
+    const scold = useCallback(() => {
+        setStep('result')
+        later(Math.max(RESULT_MS, say('mt-wrong')), ask)
+    }, [ask])
+    // once the blackout has cleared: 違うわよ！ in Ryuuko's bubble and voice, held
+    // like 正解！ (at least RESULT_MS, or the clip's length), then the same word
+
     const fail = useCallback((drop: boolean) => {
         setStep('fall')
         bridge.current = []
@@ -213,13 +219,13 @@ export function useBridgeTraining({ w, h, onLeave, group = 'pronoun', timerMs = 
         blackAt.current = performance.now()
         playSfx(DAMAGE_SFX)
         failAt.current = performance.now()
-        failSaid.current = say('mt-wrong')
-        if (!drop) later(BLACK_IN_MS, () => { toStart(); later(Math.max(BLACK_MS, failSaid.current) - BLACK_IN_MS, ask) })
-    }, [ask])
-    // wrong: the bridge is gone, damage sound, 違うわよ！ and the blackout; the
-    // player is put back at the start while the screen is black, and the same
-    // word is asked again once it clears. With drop (a wrong bridge) the
-    // player is still falling, so onArrive does both once they land
+        if (!drop) later(BLACK_IN_MS, () => { toStart(); later(BLACK_MS - BLACK_IN_MS, scold) })
+    }, [scold])
+    // fail: **違うわよ！ at the start of the blackout, the word right after it** -> **違うわよ！ once it clears**, reason: the wrong line was hidden under the black screen and replaced by the word as soon as it lifted, so it looked skipped, mechanism: say('mt-wrong') moved into scold, which runs after BLACK_MS
+    // wrong: the bridge is gone, damage sound and the blackout; the player is
+    // put back at the start while the screen is black, and scold runs once it
+    // clears. With drop (a wrong bridge) the player is still falling, so
+    // onArrive does both once they land
 
     const onTick = useCallback((dt: number) => {
         if (phaseRef.current !== 'play') return
@@ -305,10 +311,10 @@ export function useBridgeTraining({ w, h, onLeave, group = 'pronoun', timerMs = 
             const since = performance.now() - failAt.current
             later(Math.max(0, BLACK_IN_MS - since), () => {
                 toStart()
-                later(Math.max(0, Math.max(BLACK_MS, failSaid.current) - (performance.now() - failAt.current)), ask)
+                later(Math.max(0, BLACK_MS - (performance.now() - failAt.current)), scold) // after: **ask** -> **scold**, mechanism: 違うわよ！ shows once the screen clears, then the word
             })
         }
-    }, [ask, fail, setPhase, talkTo])
+    }, [ask, fail, scold, setPhase, talkTo])
     // the end of a walk: across on the right bridge (正解！, then the next word
     // or success); on a wrong one the bridge vanishes mid-gap and the player
     // drops into the spikes as the screen goes black; once they land (and the
@@ -395,16 +401,25 @@ export function useBridgeTraining({ w, h, onLeave, group = 'pronoun', timerMs = 
     const cameraFocus = useCallback((): { x: number, y: number } | undefined => {
         if (phaseRef.current !== 'play' || (step.current !== 'ask' && step.current !== 'draw')) return undefined
         const { areas, start } = bridgeLayout(sizeRef.current.w, sizeRef.current.h)
-        return { x: start.x, y: (areas[0].y + start.y + ENT_H / 2) / 2 }
+        const c = center(sizeRef.current.w, sizeRef.current.h)
+        return { x: (start.x + c.x) / 2, y: (areas[0].y + start.y + ENT_H / 2) / 2 } // x: **start.x** -> **halfway to the center**, mechanism: the areas moved to the dojo's middle, so the camera sits between them and the player
     }, [])
     // the camera point while the word and the timer run: halfway between the
-    // areas' top and the player's feet, so both are on a phone screen. Walking
+    // dojo's center and the player in x, and between the areas' top and the player's feet in y, so both are on a phone screen. Walking
     // and the rest follow the player as usual
 
     const playerLabel = useCallback((): string | undefined =>
         phaseRef.current === 'play' ? `${current.current}/${questionsRef.current.list.length}` : undefined, [])
 
-    return { phase, onTick, onChoice, onTalkEnd, onArrive, renderWorld, getHud, cameraFocus, playerLabel, talkRequest, moveRequest, walkPath, strokeStart, strokeMove, strokeEnd }
+    const getWord = useCallback(() => {
+        const list = questionsRef.current.list
+        const q = list[Math.min(current.current, list.length - 1)]
+        return { word: q.word, romaji: q.romaji }
+    }, [])
+    // the word being asked now (the last one after the run), for Ryuuko's
+    // in-range greeting during play
+
+    return { phase, onTick, onChoice, onTalkEnd, onArrive, renderWorld, getHud, cameraFocus, playerLabel, talkRequest, moveRequest, walkPath, strokeStart, strokeMove, strokeEnd, getWord } // return: **+ getWord**, mechanism: bridgeNpcs shows the word instead of いくわよ！
 }
 // usage: like useMatchingTraining, plus walkPath / onArrive for GameScene's
 // tap mode (on during 'play', so the stick never moves the player) and the
