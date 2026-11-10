@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useReducer, useRef, useState } from "react"
 import TimerClock, { CLOCK_LEFT, CLOCK_SIZE, CLOCK_TOP } from "./timerClock" // imports: **+ CLOCK_LEFT, CLOCK_SIZE, CLOCK_TOP**, mechanism: the bullet stack hangs under the clock
 import GameScene, { questBg } from "./gameScene"
+import SprintHint from "./sprintHint"
 import { TrainingHud, useQuestZoom } from "./training"
 import { AMMO_MAX, RYUUKO_W, RYUUKO_H, useShootTraining } from "./shootTraining" // imports: **useShootTraining** -> **+ RYUUKO_W, RYUUKO_H**, mechanism: her 1.5x size
 import { questIslandNpcs } from "../npcs/npcs"
@@ -102,6 +103,7 @@ function Training({ w, h, onLeave, kana, sensitivity, tutorial, children }: { w:
         <>
             <GameScene tintEdges={BUBBLE_BG} bgProps={questBg(w, h)} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} wallY={t.wallY} sensitivity={sensitivity} /* playerLabel: **t.playerLabel (ammo n/5)** -> **none**, mechanism: the ammo is the bullet stack under the clock now, so the tag shows the player's name */ onShoot={t.onShoot} zoomRequest={zoomRequest} />
             <Hud getHud={t.getHud} getAmmo={t.getAmmo} run={t.phase === 'play1' || t.phase === 'play2'} />
+            {(t.phase === 'play1' || t.phase === 'play2') && <SprintHint />} {/* hint: **none** -> **Shift sprint hint while playing**, reason: testers didn't know Shift moves at max speed, mechanism: SprintHint (bottom right, hidden on touch) mounts only during the run */}
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>
     )

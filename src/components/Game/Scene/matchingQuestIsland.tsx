@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useReducer, useRef, useState } from "react"
 import TimerClock from "./timerClock"
 import GameScene, { questBg } from "./gameScene"
+import SprintHint from "./sprintHint"
 import { TrainingHud, useQuestZoom } from "./training"
 import { center } from "./dodgeTraining"
 import { PLAYER_GAP, useMatchingTraining } from "./matchingTraining"
@@ -55,6 +56,7 @@ function Training({ w, h, onLeave, group, sensitivity, tutorial, timerMs, childr
         <>
             <GameScene tintEdges={BUBBLE_BG} /* tintEdges: **none** -> **BUBBLE_BG**, reason: the status bar showed the /Game green or a fixed Tint over the quest (issue #13), mechanism: GameScene paints the page with the ground color at the screen top, or this cream while the top row is above the room */ bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} zoomRequest={zoomRequest} /> {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: same as dodgeQuestIsland.tsx */}
             <Hud getHud={t.getHud} run={t.phase === 'play'} />
+            {(t.phase === 'play') && <SprintHint />} {/* hint: **none** -> **Shift sprint hint while playing**, reason: testers didn't know Shift moves at max speed, mechanism: SprintHint (bottom right, hidden on touch) mounts only during the run */}
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>
     )

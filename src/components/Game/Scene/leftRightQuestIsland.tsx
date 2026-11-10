@@ -2,6 +2,7 @@
 
 import { CSSProperties, ReactNode, useEffect, useReducer, useRef, useState } from "react"
 import GameScene, { DOJO_WALL, hallBg } from "./gameScene" // import: **questBg** -> **hallBg**, mechanism: the quest is a long hallway now, not the dojo room
+import SprintHint from "./sprintHint"
 import { TrainingHud } from "./training"
 import { FEET_H, HALL_W, hallH, spawnSpot, useLeftRightTraining } from "./leftRightTraining"
 import { leftRightNpcs } from "../npcs/npcs"
@@ -91,6 +92,7 @@ function Training({ w, h, onLeave, sensitivity, tutorial, children }: { w: numbe
         <>
             <GameScene tintEdges={DOJO_WALL} /* tintEdges: **none** -> **DOJO_WALL**, reason: the status bar showed another scene's color (issue #13), mechanism: GameScene paints the page with the ground color at the screen top, or the wall brown that fills the box around the hall */ bgProps={hallBg(w, h, spawnSpot(w, h).y)} npcs={cast} feetH={FEET_H} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} playerLabel={t.playerLabel} sensitivity={sensitivity} /> {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: tut.onChoice / onTalkEnd return true when the event was Hiroko's, so || skips the training's (which would read npc 1 as Elena); talk carries whichever request changed last */}
             <Hud getHud={t.getHud} getFade={t.getFade} getSign={t.getSign} />
+            {(t.phase === 'play') && <SprintHint />} {/* hint: **none** -> **Shift sprint hint while playing**, reason: testers didn't know Shift moves at max speed, mechanism: SprintHint (bottom right, hidden on touch) mounts only during the run */}
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>
     )
