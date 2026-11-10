@@ -59,10 +59,21 @@ export const toDialogs = (script: NpcScript, target?: string): SceneDialog[] => 
 // / en is replaced by the quest's kana, and such a line is left out when no
 // target is given
 
+export const NPC_ROLE: Record<string, string> = {
+    hiroko_en: 'Instruction',
+    ryuuko: 'Start Quest',
+    elena: 'Back to Island',
+}
+// what talking to each quest NPC does, shown in a tag under the body so the
+// player knows who to talk to (user testing: testers missed the
+// instructions and couldn't re-read them). Keyed by the json's npc; island
+// NPCs have no role and get no tag
+
 export const toNPCProps = (script: NpcScript, x = 0, y = 0, dialog: Dialog[] = toDialogs(script)): NPCProps => ({
     voice: script.npc,
     ent: { name: script.name, x, y, w: ENT_W, h: ENT_H, color: script.color, facing: 'none' },
     kana: script.kana,
+    role: NPC_ROLE[script.npc], // role: **none** -> **NPC_ROLE[npc]**, mechanism: NPCRenderer draws it as a tag under the body; undefined = no tag
     dialog,
 })
 // one NPC from its file: every NPC shares the default body size and stands

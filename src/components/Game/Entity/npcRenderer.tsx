@@ -2,7 +2,7 @@
 
 import { QuestsProps } from "@/utils/schema"
 import EntityRenderer, { EntityProps } from "./entityRenderer"
-import DialogBubble, { Dialog } from "./dialogBubble"
+import DialogBubble, { BUBBLE_BG, BUBBLE_BOARDER, BUBBLE_SHADOW, Dialog } from "./dialogBubble" // import: **+ BUBBLE_BG, BUBBLE_BOARDER, BUBBLE_SHADOW**, mechanism: the role tag wears the dialog bubble's colors
 import { lineUrl } from "./voice" // import: **NPCVoice from speech** -> **dialogUrl from voice**, reason: speechSynthesis removed
 
 export type NPCProps = {
@@ -11,6 +11,7 @@ export type NPCProps = {
     dialog?: Dialog[], // greeting, greetingEn, dialog, dialogEn: **four separate fields** -> **dialog: Dialog[]**, reason: an NPC says different things by condition (first talk, after talking, quest cleared), mechanism: each entry is tagged with its condition and carries its jp lines + en; pickDialog below chooses one
     quest?: { id: number, title: string, status?: 'done' | 'resume' }
     kana?: string // kana: **none** -> **kana?**, reason: each island-1 NPC trains one vowel, mechanism: IslandScene gives it the quest row with the same kana; MobileTester opens the training on it directly
+    role?: string // role: **none** -> **role?**, reason: players couldn't tell who explains the quest and who starts it, mechanism: drawn as a tag under the body, always visible; set from NPC_ROLE (toNPCProps.ts)
 }
 // selected: **in NPCProps** -> **NPCRenderer prop**, reason: which NPC is
 // talking is scene state, not NPC data, mechanism: GameScene passes
@@ -42,6 +43,9 @@ export const talkLines = (npc: NPCProps, spoken: boolean, questOpen = false) => 
 }
 // the lines a talk steps through, one per tap, each paired with its English
 // (index-aligned; a missing one is '' = no English line)
+
+const ROLE_GAP = 3 // world px between the body's bottom and the role tag
+const ROLE_SIZE = 5 // world px, smaller than the name (8) so the tag reads as a caption
 
 export const NPC_TAP_ATTR = 'data-npc'
 // GameScene's stick overlay sits above the whole world, so taps never reach
@@ -92,7 +96,35 @@ export default function NPCRenderer({ npc, index, velocity, inRange, selected = 
                     }}
                 />
             )}
-            {dialogs && <DialogBubble x={ent.x} y={ent.y} h={ent.h} dialogs={dialogs} tapId={tap && index} audio={audio} choices={choices} />} {/* speak: **npc.voice while selected** -> **audio URL**, reason: mp3s replace speechSynthesis and the greeting plays too, mechanism: see audio above */} {/* dialogs: **one wrapped default line** -> **the entry picked above**, mechanism: see dialogs */}
+            {npc.role && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        left: ent.x,
+                        top: (ent.y ?? 0) + ent.h / 2 + ROLE_GAP,
+                        transform: 'translateX(-50%)',
+                        padding: '1px 3px',
+                        fontSize: ROLE_SIZE,
+                        lineHeight: 1.2,
+                        whiteSpace: 'nowrap',
+                        color: 'black',
+                        background: BUBBLE_BG,
+                        border: `1px solid ${BUBBLE_BOARDER}`,
+                        boxShadow: `0 1px 0 ${BUBBLE_SHADOW}`,
+                        pointerEvents: 'none',
+                        userSelect: 'none',
+                        zIndex: 1,
+                    }}
+                >
+                    {npc.role}
+                </div>
+            )}
+            {/* role tag: a small bubble-styled label ROLE_GAP under the
+                body's bottom edge (top = center + h/2), centered by
+                translateX(-50%). Below the body, not above, so it never
+                collides with the name tag or the dialog bubble, and it stays
+                on whether or not the player is in range */}
+            {dialogs && <DialogBubble x={ent.x} y={ent.y} h={ent.h} dialogs={dialogs} tapId={tap && index} audio={audio} choices={choices} panel={selected} />} {/* panel: **none** -> **selected**, reason: bigger talk text on phones, mechanism: only the active talk moves to the top-half panel; the in-range greeting stays a small bubble over the NPC */} {/* speak: **npc.voice while selected** -> **audio URL**, reason: mp3s replace speechSynthesis and the greeting plays too, mechanism: see audio above */} {/* dialogs: **one wrapped default line** -> **the entry picked above**, mechanism: see dialogs */}
         </>
     )
 }

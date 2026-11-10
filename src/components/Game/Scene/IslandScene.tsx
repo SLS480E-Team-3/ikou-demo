@@ -10,6 +10,7 @@ import { KANA_ROWS } from "../kana"
 import { fileBg, registerSprites, type IslandFile } from "../islands/islandFile" // imports: **none** -> **fileBg, registerSprites, IslandFile**, mechanism: a saved island from /IslandEditor
 import { layoutNpcs } from "../islands/layoutNpcs"
 import { useTileWalk } from "../islands/tiles" // imports: **none** -> **useTileWalk**, mechanism: a saved island with tiles plays as a tile path (issue #6)
+import { questDescription } from "../islands/questDescription" // imports: **+ questDescription**, mechanism: the tile's start bubble says what its quest teaches
 // import { useEffect } from "react" // imports: **useEffect** -> **commented out**, mechanism: its only use, the island BGM, is commented out
 // import { ISLAND_BGM, playBgm } from "../Entity/voice" // music: **on** -> **commented out**, reason: BGM and quest clear / fail music turned off for now, mechanism: uncomment to bring it back
 // imports: **none** -> **useEffect, ISLAND_BGM, playBgm**, mechanism: the island's looping BGM starts with the scene
@@ -18,7 +19,7 @@ import { useTileWalk } from "../islands/tiles" // imports: **none** -> **useTile
 export type IslandSceneProps = {
     islandId: number
     points: number
-    quests: { id: number, title: string, kana: string | null, target?: unknown, status?: 'done' | 'resume' }[] // quest: **no kana** -> **+ kana**, mechanism: matched to NPCProps.kana // quest: **+ target**, mechanism: a saved island's NPC names its quest's kana target
+    quests: { id: number, title: string, kana: string | null, target?: unknown, quest_type?: string | null, status?: 'done' | 'resume' }[] // quest: **+ quest_type**, mechanism: picks the tile's description // quest: **no kana** -> **+ kana**, mechanism: matched to NPCProps.kana // quest: **+ target**, mechanism: a saved island's NPC names its quest's kana target
     layout?: IslandFile
     // the newest version saved in /IslandEditor; left out = the code's map,
     // sections and kana-row NPCs
@@ -54,7 +55,7 @@ export default function IslandScene({ islandId, points, quests, layout }: Island
     // entry, so it talks normally even though onQuest is always set
     const tiles = layout?.tiles ?? []
     const cleared = tiles.map(t => quests.some(q => q.id === t.questId && q.status === 'done'))
-    const tileWalk = useTileWalk(tiles, cleared, t => { if (t.questId) router.push(`/Game/${islandId}/${t.questId}`) }, `game-${islandId}`) // args: **+ seenKey game-<island>**, mechanism: a tile cleared in a quest animates once on the way back
+    const tileWalk = useTileWalk(tiles, cleared, t => { if (t.questId) router.push(`/Game/${islandId}/${t.questId}`) }, `game-${islandId}`, t => questDescription(quests.find(q => q.id === t.questId))) // args: **+ describe**, mechanism: the start bubble explains the tile's quest // args: **+ seenKey game-<island>**, mechanism: a tile cleared in a quest animates once on the way back
     const tileMode = tiles.length > 0
     const bg = layout ? fileBg(layout) : islandBg(islandId)
     // tile mode (issue #6): with tiles in the saved island, the player starts

@@ -18,6 +18,7 @@ import { KANA_ROWS } from "@/components/Game/kana"
 import { fileBg, registerSprites, type IslandFile } from "@/components/Game/islands/islandFile"
 import { layoutNpcs, type LayoutQuest } from "@/components/Game/islands/layoutNpcs"
 import { useTileWalk } from "@/components/Game/islands/tiles"
+import { questDescription } from "@/components/Game/islands/questDescription" // imports: **+ questDescription**, mechanism: the tile's start bubble says what its quest teaches
 // imports: **none** -> **islandFile, layoutNpcs, useTileWalk**, mechanism: /MobDev plays the island's saved <island>_ver<N>.json like /Game does
 // MobileTester's 'game scene' page, moved here so /MobDev/GameScene?island=N can show it
 // full-screen on a phone too
@@ -140,7 +141,7 @@ function SavedIsland({ file, quests, tint, sensitivity, onQuest, done, onClear }
     const tileWalk = useTileWalk(tiles, tiles.map(t => done.includes(t.id)), t => {
         onClear(t.id)
         onQuest(pickOf(t.questId))
-    }, `mobdev-${file.islandId}-${file.ver}`) // done: **own state** -> **from IslandPreview**, mechanism: survives the quest island; seenKey: **+ mobdev-<island>-<ver>**, mechanism: the clear animation plays on the way back
+    }, `mobdev-${file.islandId}-${file.ver}`, t => questDescription(quests.find(q => q.id === t.questId))) // args: **+ describe**, mechanism: same start-bubble description as IslandScene // done: **own state** -> **from IslandPreview**, mechanism: survives the quest island; seenKey: **+ mobdev-<island>-<ver>**, mechanism: the clear animation plays on the way back
     const tileMode = tiles.length > 0
     const bg = fileBg(file)
     return <GameScene tintEdges={tint} sensitivity={sensitivity} {...(tileMode && tileWalk.sceneProps)} bgProps={tileMode && tileWalk.spawn ? { ...bg, ...tileWalk.spawn } : bg}

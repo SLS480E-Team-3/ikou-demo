@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react" // imports: **useState** -> **+ useEffect**, mechanism: the clear animation starts from an effect
 import { ENT_H } from "../Entity/entityRenderer"
-import DialogBubble from "../Entity/dialogBubble"
+import DialogBubble, { type Dialog } from "../Entity/dialogBubble" // import: **+ Dialog**, mechanism: types the start bubble's entry
 import { BG_H } from "../Scene/gameScene"
 import type { FileTile } from "./islandFile"
 
@@ -104,7 +104,7 @@ export function TilePath({ tiles, cleared, anim = null }: { tiles: FileTile[], c
 
 type Walk = { points: { x: number, y: number }[], key: number, to: number }
 
-export const useTileWalk = (tiles: FileTile[], cleared: boolean[], onYes: (tile: FileTile) => void, seenKey: string) => { // args: **+ seenKey**, mechanism: which island's played animations to read / write
+export const useTileWalk = (tiles: FileTile[], cleared: boolean[], onYes: (tile: FileTile) => void, seenKey: string, describe?: (tile: FileTile) => string | undefined) => { // args: **+ describe**, reason: testers couldn't tell what a quest teaches, mechanism: the tile's quest description, shown in the start bubble // args: **+ seenKey**, mechanism: which island's played animations to read / write
     const [anim, setAnim] = useState<number | null>(null)
     const [move, setMove] = useState<{ x: number, y: number, key: number }>()
     const last = anim !== null ? Math.min(anim, lastReachable(cleared)) : lastReachable(cleared) // last: **lastReachable** -> **held at the animating tile**, mechanism: the next tile can't be tapped until it has turned red
@@ -172,12 +172,18 @@ export const useTileWalk = (tiles: FileTile[], cleared: boolean[], onYes: (tile:
 
     const spot = tiles[at] && standAt(tiles[at])
     const tile = asking !== null ? tiles[asking] : undefined
+    const again = asking !== null && cleared[asking]
+    const desc = tile && describe?.(tile)
+    const ask: Dialog = desc
+        ? { condition: 'quest', jp: '', en: `${desc} ${again ? 'Play again?' : 'Start?'}` }
+        : again ? { condition: 'quest', jp: 'もういちど？', en: 'Play again?' } : { condition: 'quest', jp: 'はじめる？', en: 'Start?' }
+    // ask: **はじめる？ / もういちど？ only** -> **the quest's description + Start? / Play again? when describe gives one**, reason: testers couldn't tell what a quest teaches, mechanism: one English-only page (jp '') so DialogBubble shows it in the bigger English font and never pages it away; the はい / いいえ choices stay. No description = the old Japanese ask
     const renderWorld = () => <>
         <TilePath tiles={tiles} cleared={cleared} anim={anim} />
         {tile && spot && (
             <div style={{ position: 'absolute', left: 0, top: 0, zIndex: BG_H + 1 }}>
                 <DialogBubble x={spot.x} y={spot.y} h={ENT_H}
-                    dialogs={[cleared[asking!] ? { condition: 'quest', jp: 'もういちど？', en: 'Play again?' } : { condition: 'quest', jp: 'はじめる？', en: 'Start?' }]}
+                    dialogs={[ask]}
                     choices={[{ jp: 'はい', en: 'Yes' }, { jp: 'いいえ', en: 'No' }]} />
             </div>
         )}

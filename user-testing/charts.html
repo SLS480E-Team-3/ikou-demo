@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ikou User Testing</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface-1: #fcfcfb;
+  --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --yes: #2a78d6; --kind: #a8a79f; --no: #e34948; --bar: #2a78d6;
+  --on-fill: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface-1: #1a1a19;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --yes: #3987e5; --kind: #6b6a64; --no: #e66767; --bar: #3987e5;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface-1: #1a1a19;
+  --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --yes: #3987e5; --kind: #6b6a64; --no: #e66767; --bar: #3987e5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--text-primary);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 24px; margin: 0 0 4px; }
+.lede { color: var(--text-secondary); margin: 0 0 28px; }
+section.card { background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+h2 { font-size: 17px; margin: 0 0 2px; }
+.sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 14px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px;
+  color: var(--text-secondary); margin-bottom: 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+  margin-right: 6px; vertical-align: -1px; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { font-family: inherit; }
+.notes { display: grid; gap: 10px; margin-top: 16px; font-size: 14px; }
+.notes p { margin: 0; }
+.notes b { font-weight: 600; }
+.cant { color: var(--text-secondary); }
+details { margin-top: 12px; font-size: 13px; color: var(--text-secondary); }
+summary { cursor: pointer; }
+table { border-collapse: collapse; margin-top: 8px; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--grid); }
+.hit { cursor: default; }
+#tip { position: fixed; pointer-events: none; background: var(--surface-1);
+  color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  opacity: 0; transition: opacity .1s; max-width: 280px; z-index: 10; }
+#tip .m { color: var(--text-secondary); }
+footer { font-size: 13px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ikou user testing: where learners struggled</h1>
+  <p class="lede">6 testers, 4 Nov 2026. Everyone liked the quests. The trouble was in getting started:
+    knowing what to press and what Japanese was being taught.</p>
+
+  <section class="card" id="c1">
+    <h2>The quests were fun for everyone; onboarding and navigation were the soft spots</h2>
+    <p class="sub">Answers to four statements, one block per tester</p>
+    <div class="legend"><span><i style="background:var(--yes)"></i>Yes</span><span><i style="background:var(--kind)"></i>Kind of</span><span><i style="background:var(--no)"></i>No</span></div>
+    <svg id="s1" role="img" aria-label="Stacked unit bars of Yes, Kind of and No answers per statement"></svg>
+    <div class="notes">
+      <p><b>What it shows.</b> All 6 said the quests were fun and engaging. Each of the other three statements
+        got 4 yeses. Every “Kind of” or “No” was about onboarding, instructions or navigation. The one outright
+        “No” was on whether the app’s purpose was clear at the start. Everyone said they’d come back
+        (3 very likely, 3 likely).</p>
+      <p class="cant"><b>What 6 testers can’t tell us.</b> Whether “4 of 6” would come out as 67% for a bigger group.
+        One more unhappy tester would move it to 57%, so read these as signs, not rates. The scale also stops at
+        3 answers and nobody was offered “unlikely” to return. On top of that, testers who know the team tend to be kind,
+        so “fun” is probably an upper bound.</p>
+    </div>
+    <details><summary>Table view</summary><table id="t1"></table></details>
+  </section>
+
+  <section class="card" id="c2">
+    <h2>The friction came from the less experienced testers</h2>
+    <p class="sub">Each tester’s answers, sorted by how long they have studied Japanese</p>
+    <div class="legend"><span><i style="background:var(--yes)"></i>Yes</span><span><i style="background:var(--kind)"></i>Kind of</span><span><i style="background:var(--no)"></i>No</span></div>
+    <svg id="s2" role="img" aria-label="Grid of each tester's answers, sorted by Japanese study experience"></svg>
+    <div class="notes">
+      <p><b>What it shows.</b> Only two testers gave anything below “Yes”. T6 has never studied Japanese and
+        T2 has studied for 1–2 years. Both also asked for more instructions in their comments. The two testers with 5+ years
+        said yes to everything. Absolute beginners are the app’s audience, so this is the group whose onboarding matters most.</p>
+      <p class="cant"><b>What 6 testers can’t tell us.</b> Whether experience <i>causes</i> the friction. This is 2 people,
+        and T3, another non-studier, said yes to everything. All 6 had been to Japan, so we can’t tell how that affects
+        things, and it means none of them is a typical newcomer. Each experience level holds only 1–2 people.</p>
+    </div>
+    <details><summary>Table view</summary><table id="t2"></table></details>
+  </section>
+
+  <section class="card" id="c3">
+    <h2>What testers would change: instructions, teaching, and controls</h2>
+    <p class="sub">Testers whose “what would you change / improve” answers mention each theme (5 of 6 answered)</p>
+    <svg id="s3" role="img" aria-label="Bar chart of improvement themes by number of testers"></svg>
+    <div class="notes">
+      <p><b>What it shows.</b> Three themes tie at 3 testers each. (1) Clearer instructions that can be read again,
+        including that Space advances the dialog. (2) Teaching the words before the quest asks for them: a lesson,
+        a vocab list, definitions. (3) Faster movement and more control keys. The second matters most for the
+        learning goal: T2 said it wasn’t clear what was being taught to a beginner.</p>
+      <p class="cant"><b>What 6 testers can’t tell us.</b> How these rank against each other. A 3–3–3 tie among
+        5 people is noise. One person coded these themes from short free-text answers, and someone else might group
+        them differently. Testers also only mention what comes to mind, so leaving a theme out doesn’t mean they
+        were happy with it.</p>
+    </div>
+    <details><summary>Table view with quotes</summary><table id="t3"></table></details>
+  </section>
+
+  <footer>Source: Ikou User-testing Questionnaire (anonymised, n = 6). Cleaned data: questionnaire-clean.csv, suggestion-themes.csv.</footer>
+</main>
+<div id="tip" role="status"></div>
+<script>
+const LABEL = {2: "Yes", 1: "Kind of", 0: "No"};
+const COLOR = {2: "var(--yes)", 1: "var(--kind)", 0: "var(--no)"};
+const ITEMS = [
+  ["quests_fun", "Quests were fun"],
+  ["purpose_clear", "Purpose clear at onboarding"],
+  ["instructions_easy", "Instructions easy to follow"],
+  ["navigation_easy", "Site easy to navigate"],
+];
+// tester, experience, rank, scores per ITEMS order, return
+const T = [
+  ["T1", "<1 year", 1, {quests_fun: 2, purpose_clear: 2, instructions_easy: 2, navigation_easy: 2}, "Likely"],
+  ["T2", "1–2 years", 2, {quests_fun: 2, purpose_clear: 1, instructions_easy: 1, navigation_easy: 1}, "Very likely"],
+  ["T3", "None", 0, {quests_fun: 2, purpose_clear: 2, instructions_easy: 2, navigation_easy: 2}, "Very likely"],
+  ["T4", "5+ years", 3, {quests_fun: 2, purpose_clear: 2, instructions_easy: 2, navigation_easy: 2}, "Likely"],
+  ["T5", "5+ years", 3, {quests_fun: 2, purpose_clear: 2, instructions_easy: 2, navigation_easy: 2}, "Very likely"],
+  ["T6", "None", 0, {quests_fun: 2, purpose_clear: 0, instructions_easy: 1, navigation_easy: 1}, "Likely"],
+];
+const THEMES = [
+  ["Clearer, re-readable instructions", {T2: "More explanations in the instructions.", T5: "Add an option to read the instruction again?", T6: "it wasn’t clear that you had to push space"}],
+  ["Teach the Japanese before the quest", {T2: "Not necessarily clear on what was being taught if a beginner.", T3: "add potential words w thier definition before u are answering", T4: "Lesson in the beginning"}],
+  ["Faster movement / more control keys", {T2: "Make “me” move faster in the speed up round.", T3: "make space keys work as well as awsd", T5: "add an option to let the user move faster?"}],
+  ["Text size and layout", {T4: "Bigger text when it starts / Smaller board", T5: "Display the user’s name at the bottom of the character"}],
+  ["Bridge timer too fast", {T2: "The timer felt a little fast to build the bridge."}],
+];
+
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs, parent, text) => {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (text != null) n.textContent = text;
+  if (parent) parent.appendChild(n);
+  return n;
+};
+const tip = document.getElementById("tip");
+const esc = s => s.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]));
+function hover(node, html) {
+  node.classList.add("hit");
+  node.addEventListener("pointermove", e => {
+    tip.innerHTML = html; tip.style.opacity = 1;
+    const w = tip.offsetWidth;
+    tip.style.left = Math.min(e.clientX + 12, innerWidth - w - 8) + "px";
+    tip.style.top = (e.clientY + 14) + "px";
+  });
+  node.addEventListener("pointerleave", () => tip.style.opacity = 0);
+}
+// Rounded on the data end only (right side), square at baseline when isFirst.
+function block(parent, x, y, w, h, fill, rl, rr) {
+  const r = 4, L = rl ? r : 0, R = rr ? r : 0;
+  const d = `M${x + L},${y} H${x + w - R} ${R ? `Q${x + w},${y} ${x + w},${y + R}` : ""} V${y + h - R} ${R ? `Q${x + w},${y + h} ${x + w - R},${y + h}` : ""} H${x + L} ${L ? `Q${x},${y + h} ${x},${y + h - L}` : ""} V${y + L} ${L ? `Q${x},${y} ${x + L},${y}` : ""} Z`;
+  return el("path", {d, fill}, parent);
+}
+
+// ---------- Chart 1: unit stacked bars ----------
+(() => {
+  const svg = document.getElementById("s1");
+  const labelW = 190, W = 700, unit = (W - labelW - 40) / 6, rowH = 40, barH = 22, gap = 2;
+  svg.setAttribute("viewBox", `0 0 ${W} ${ITEMS.length * rowH + 24}`);
+  ITEMS.forEach(([key, name], i) => {
+    const y = i * rowH + 4;
+    el("text", {x: 0, y: y + barH / 2 + 5, fill: "var(--text-primary)", "font-size": 14}, svg, name);
+    const order = T.map(t => t[3][key]).sort((a, b) => b - a);
+    const counts = {2: 0, 1: 0, 0: 0}; order.forEach(v => counts[v]++);
+    let x = labelW;
+    order.forEach((v, j) => {
+      const testers = T.filter(t => t[3][key] === v).map(t => t[0]).join(", ");
+      const b = block(svg, x, y, unit - gap, barH, COLOR[v], false, j === order.length - 1);
+      hover(b, `<b>${esc(name)}</b><br>${LABEL[v]}: ${counts[v]} of 6 <span class="m">(${testers})</span>`);
+      // secondary encoding: answer initial inside each block
+      el("text", {x: x + (unit - gap) / 2, y: y + barH / 2 + 4, "text-anchor": "middle", "font-size": 11,
+        fill: v === 1 ? "#0b0b0b" : "var(--on-fill)", "pointer-events": "none"}, svg, v === 2 ? "Y" : v === 1 ? "~" : "N");
+      x += unit;
+    });
+    el("text", {x: x + 6, y: y + barH / 2 + 5, fill: "var(--text-secondary)", "font-size": 13}, svg, `${counts[2]}/6`);
+  });
+  const ay = ITEMS.length * rowH + 4;
+  el("line", {x1: labelW, x2: labelW + unit * 6 - gap, y1: ay, y2: ay, stroke: "var(--axis)"}, svg);
+  [0, 3, 6].forEach(n => el("text", {x: labelW + unit * n - (n === 6 ? gap : 0), y: ay + 16, "text-anchor": n === 0 ? "start" : n === 6 ? "end" : "middle", fill: "var(--text-muted)", "font-size": 12}, svg, `${n} testers`));
+  const t1 = document.getElementById("t1");
+  t1.innerHTML = "<tr><th>Statement</th><th>Yes</th><th>Kind of</th><th>No</th></tr>" + ITEMS.map(([k, n]) => {
+    const c = [2, 1, 0].map(v => T.filter(t => t[3][k] === v).length);
+    return `<tr><td>${n}</td><td>${c[0]}</td><td>${c[1]}</td><td>${c[2]}</td></tr>`;
+  }).join("") + "<tr><td>Will come back</td><td colspan=3>Very likely 3 · Likely 3 (no other answers given)</td></tr>";
+})();
+
+// ---------- Chart 2: tester x statement grid ----------
+(() => {
+  const svg = document.getElementById("s2");
+  const rows = [...T].sort((a, b) => a[2] - b[2] || a[0].localeCompare(b[0]));
+  const labelW = 150, W = 700, head = 40, cellH = 28, gap = 4, cols = ITEMS.length;
+  const cellW = (W - labelW - 70) / cols;
+  svg.setAttribute("viewBox", `0 0 ${W} ${head + rows.length * (cellH + gap)}`);
+  const short = ["Quests fun", "Purpose clear", "Instructions", "Navigation"];
+  short.forEach((s, c) => el("text", {x: labelW + c * cellW + (cellW - gap) / 2, y: head - 12, "text-anchor": "middle", fill: "var(--text-secondary)", "font-size": 12}, svg, s));
+  el("text", {x: labelW + cols * cellW + 6, y: head - 12, fill: "var(--text-secondary)", "font-size": 12}, svg, "Return");
+  let prev = null;
+  rows.forEach((t, r) => {
+    const y = head + r * (cellH + gap);
+    if (t[1] !== prev) {
+      if (r > 0) el("line", {x1: 0, x2: W, y1: y - gap / 2, y2: y - gap / 2, stroke: "var(--grid)"}, svg);
+      prev = t[1];
+    }
+    el("text", {x: 0, y: y + cellH / 2 + 5, fill: "var(--text-primary)", "font-size": 14}, svg, t[0]);
+    el("text", {x: 34, y: y + cellH / 2 + 5, fill: "var(--text-secondary)", "font-size": 13}, svg, `studied: ${t[1]}`);
+    ITEMS.forEach(([k, n], c) => {
+      const v = t[3][k], x = labelW + c * cellW;
+      const b = block(svg, x, y, cellW - gap, cellH, COLOR[v], true, true);
+      hover(b, `<b>${t[0]}</b> <span class="m">(studied ${esc(t[1])})</span><br>${esc(n)}: ${LABEL[v]}`);
+      el("text", {x: x + (cellW - gap) / 2, y: y + cellH / 2 + 4, "text-anchor": "middle", "font-size": 12,
+        fill: v === 1 ? "#0b0b0b" : "var(--on-fill)", "pointer-events": "none"}, svg, LABEL[v]);
+    });
+    el("text", {x: labelW + cols * cellW + 6, y: y + cellH / 2 + 5, fill: "var(--text-secondary)", "font-size": 13}, svg, t[4]);
+  });
+  document.getElementById("t2").innerHTML = "<tr><th>Tester</th><th>Studied</th>" + short.map(s => `<th>${s}</th>`).join("") + "<th>Return</th></tr>" +
+    rows.map(t => `<tr><td>${t[0]}</td><td>${esc(t[1])}</td>${ITEMS.map(([k]) => `<td>${LABEL[t[3][k]]}</td>`).join("")}<td>${t[4]}</td></tr>`).join("");
+})();
+
+// ---------- Chart 3: themes bar ----------
+(() => {
+  const svg = document.getElementById("s3");
+  const labelW = 250, W = 700, rowH = 38, barH = 20, max = 5;
+  const plotW = W - labelW - 40, sx = n => labelW + n / max * plotW;
+  const H = THEMES.length * rowH + 24;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  for (let n = 0; n <= max; n++) {
+    el("line", {x1: sx(n), x2: sx(n), y1: 0, y2: THEMES.length * rowH, stroke: n === 0 ? "var(--axis)" : "var(--grid)"}, svg);
+    el("text", {x: sx(n), y: THEMES.length * rowH + 16, "text-anchor": "middle", fill: "var(--text-muted)", "font-size": 12}, svg, n);
+  }
+  THEMES.forEach(([name, ev], i) => {
+    const y = i * rowH + (rowH - barH) / 2, n = Object.keys(ev).length;
+    el("text", {x: 0, y: y + barH / 2 + 5, fill: "var(--text-primary)", "font-size": 14}, svg, name);
+    const hit = el("g", {}, svg);
+    el("rect", {x: labelW, y: i * rowH, width: plotW, height: rowH, fill: "transparent"}, hit);
+    block(hit, sx(0), y, sx(n) - sx(0), barH, "var(--bar)", false, true);
+    el("text", {x: sx(n) + 6, y: y + barH / 2 + 5, fill: "var(--text-secondary)", "font-size": 13}, svg, `${n} · ${Object.keys(ev).join(", ")}`);
+    hover(hit, `<b>${esc(name)}</b> — ${n} of 5 commenters` + Object.entries(ev).map(([t, q]) => `<br><span class="m">${t}:</span> “${esc(q)}”`).join(""));
+  });
+  document.getElementById("t3").innerHTML = "<tr><th>Theme</th><th>Tester</th><th>Their words</th></tr>" +
+    THEMES.flatMap(([name, ev]) => Object.entries(ev).map(([t, q]) => `<tr><td>${esc(name)}</td><td>${t}</td><td>${esc(q)}</td></tr>`)).join("");
+})();
+</script>
+</body>
+</html>

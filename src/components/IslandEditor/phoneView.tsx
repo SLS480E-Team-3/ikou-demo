@@ -8,6 +8,7 @@ import GameScene from "@/components/Game/Scene/gameScene"
 import { fileBg, registerSprites, type IslandFile } from "@/components/Game/islands/islandFile"
 import { layoutNpcs } from "@/components/Game/islands/layoutNpcs"
 import { useTileWalk } from "@/components/Game/islands/tiles"
+import { questDescription } from "@/components/Game/islands/questDescription" // imports: **+ questDescription**, mechanism: the tile's start bubble says what its quest teaches
 import type { EditorQuest } from "./types"
 
 const PHONES: { label: string, size: CSSProperties }[] = [
@@ -37,7 +38,7 @@ export default function PhoneView({ file, quests }: { file: IslandFile, quests: 
         const q = quests.find(x => x.id === t.questId)
         setNote(`はい → the game would open ${q ? `quest #${q.id} "${q.title}"` : 'nothing (no quest on this tile)'}; marked cleared here so the next tile opens`)
         setDone(d => d.includes(t.id) ? d : [...d, t.id])
-    }, `editor-${file.islandId}`) // args: **+ seenKey**, mechanism: はい here plays the clear animation
+    }, `editor-${file.islandId}`, t => questDescription(quests.find(q => q.id === t.questId))) // args: **+ describe**, mechanism: the editor's phone view shows the same start-bubble description as the game // args: **+ seenKey**, mechanism: はい here plays the clear animation
     const tileMode = tiles.length > 0
     // tile mode, like IslandScene: no player is logged in here, so a tile's
     // はい marks it cleared for this phone view only, which opens the path to

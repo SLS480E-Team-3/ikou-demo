@@ -68,6 +68,7 @@ const LINE_W = 10
 
 const ASK_MS = 800
 const TIMER_MS = 10000
+const EXTRA_MS = 5000 // extra: **none** -> **5000**, reason: a tester felt the timer was a little fast to draw the bridge, mechanism: added to the drawing limit in useBridgeTraining, both the default and a quest's timer_ms, so the clock and the fail check both get 5 s more
 const RESULT_MS = 1200
 export const BLACK_IN_MS = 300
 export const BLACK_MS = 1600
@@ -116,8 +117,8 @@ const inBox = (p: Pt, b: { x: number, y: number, w: number, h: number }) => p.x 
 export function useBridgeTraining({ w, h, onLeave, group = 'pronoun', timerMs = TIMER_MS }: { w: number, h: number, onLeave?: () => void, group?: KosoadoGroup, timerMs?: number }) {
     const [phase, setPhaseState] = useState<BrPhase>('intro')
     const phaseRef = useRef<BrPhase>('intro')
-    const timerRef = useRef(timerMs)
-    timerRef.current = timerMs
+    const timerRef = useRef(timerMs + EXTRA_MS)
+    timerRef.current = timerMs + EXTRA_MS // limit: **timerMs** -> **timerMs + EXTRA_MS**, mechanism: every reader (the fail check in onTick, the HUD's timeFrac) goes through timerRef, so one place lengthens the whole run's drawing time
     const [talkRequest, setTalkRequest] = useState<{ npc: number, key: number } | undefined>(undefined)
     const [moveRequest, setMoveRequest] = useState<{ x: number, y: number, key: number } | undefined>(undefined)
     const [walkPath, setWalkPath] = useState<WalkPath | undefined>(undefined)

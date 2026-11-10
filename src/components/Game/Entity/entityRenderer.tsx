@@ -39,8 +39,8 @@ export const ENT_H = BASE_H * 2 // size: **20** -> **BASE_H * 2 (40)**, mechanis
 // exported so wrappers (player name tag) can fall back to the same default
 // size EntityRenderer uses when no ent is passed
 
-const NAME_GAP = 4 // px between the top of the body and the name
-const NAME_SIZE = 8 // world px, scaled by the scene zoom like everything else
+export const NAME_GAP = 4 // px between the top of the body and the name // scope: **const** -> **export const**, mechanism: the player's name tag under the body (playerRenderer) uses the same gap
+export const NAME_SIZE = 8 // world px, scaled by the scene zoom like everything else // scope: **const** -> **export const**, mechanism: same size for the player's name tag under the body
 // NAME_GAP / NAME_SIZE: **in playerRenderer** -> **here**, mechanism: the name tag moved in with ent.name, so NPCs get the same tag
 
 export default function EntityRenderer({

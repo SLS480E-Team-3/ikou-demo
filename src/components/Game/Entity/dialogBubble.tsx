@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react" // imports: **useEffect, useState** -> **+ createContext, useContext**, mechanism: DialogPanelHost hands the bubble the screen-space box its mobile panel portals into
+import { createPortal } from "react-dom" // imports: **+ createPortal**, mechanism: the mobile panel renders into GameScene's screen-space host, outside the zoomed world
 import { playLine, stopLine } from "./voice" // import: **speech (speakJa / stopSpeech)** -> **voice (playLine / stopLine)**, reason: lines play recorded mp3s now
 
 export type Condition =
@@ -32,6 +33,7 @@ type DialogBubbleProps = {
     tapId?: number, // tapId: **none** -> **tapId?**, reason: NPCs are picked by tapping their bubble, mechanism: set as the data-npc attribute on the wrapper, which GameScene's stick overlay hit-tests by rect (the bubble itself stays pointerEvents none)
     audio?: string, // speak: **speak?: NPCVoice** -> **audio?: string**, reason: speechSynthesis replaced by recorded mp3s, mechanism: URL of the clip played when the bubble shows; left out = silent (EntityRenderer's bubbles, lines with no recording)
     choices?: Dialog['choices'], // choices: **none** -> **choices?**, mechanism: NPCRenderer passes them only on a talk's last line; drawn once that line has fully typed
+    panel?: boolean, // panel: **none** -> **panel?**, reason: on phones the talk bubble was small and fit 15 characters, mechanism: true = on a phone-wide scene, draw this as the top-half panel (see DialogPanelHost) instead of the world bubble; NPCRenderer sets it for the active talk only
     dialogs: Dialog[] // text, en: **text?, en?** -> **dialog: Dialog[]**, reason: a line's Japanese and English travel together with the condition they're said under, mechanism: each Dialog's jp lines page as before and en[i] types under jp[i]; the entries play in order, so the caller picks which ones (by condition) to pass
 }
 // the bubble takes the entity's position, not its own, so a caller passes
@@ -91,18 +93,44 @@ export const CHOICE_TAP_ATTR = 'data-choice'
 
 const CHOICE_BG = '#ffe9a8'
 
+export const DialogPanelHost = createContext<HTMLElement | null>(null)
+// the screen-space box (GameScene's, over the whole scene) a mobile talk
+// panel portals into. null outside a GameScene, so the bubble stays a bubble
+
+const PHONE_MAX_W = 768 // css px; narrower scenes get the panel, same cut as Hiroko's touch / keys lines (tutorial.ts)
+const PANEL_BASE_FONT = 24 // css px: JA_FONT x the talk zoom (8 x 3), the size the world bubble's Japanese is on screen today
+export const PANEL_FONT_SCALE = 1.1 // the panel's text vs PANEL_BASE_FONT; tune here (1.1 = 10% bigger)
+const PANEL_MARGIN = 12 // css px from the scene's sides and the safe area's top
+const PANEL_RESERVE = 150 // css px of the half screen kept off the Japanese lines: the safe-area top (up to ~60), the English line, the choices and the tail
+const LINE_H = 1.3
+
+type PanelFit = { font: number, pageChars: number, perLine: number, lines: number }
+const panelFit = (host: HTMLElement): PanelFit => {
+    const font = PANEL_BASE_FONT * PANEL_FONT_SCALE
+    const s = font / JA_FONT
+    const innerW = host.clientWidth - 2 * PANEL_MARGIN - 2 * (6 * s + BUBBLE_BORDER_W * s)
+    const perLine = Math.max(1, Math.floor(innerW / font))
+    const lines = Math.max(1, Math.floor((host.clientHeight / 2 - PANEL_MARGIN - PANEL_RESERVE) / (font * LINE_H)))
+    return { font, pageChars: perLine * lines, perLine, lines }
+}
+// how much Japanese one panel page holds: full-width kana are one font size
+// wide, so a line fits the panel's inner width (scene width minus margins,
+// the scaled padding and border) divided by the font; the lines are what
+// fits in the top half after PANEL_RESERVE. Read from the host's size each
+// render (GameScene re-renders every frame), so a rotate re-fits
+
 const toList = (text?: string | string[]) => typeof text === 'string' ? [text] : text ?? []
 
 type Page = { chars: string[], en: string[] }
 
-const toPages = (dialog: Dialog[]): Page[] => { // args: **(text, en)** -> **(dialog)**, mechanism: each entry's jp / en lists are paired up first, then paged the same way
+const toPages = (dialog: Dialog[], pageChars = PAGE_CHARS): Page[] => { // args: **+ pageChars**, mechanism: the mobile panel pages by what fits its size (panelFit); the bubble keeps PAGE_CHARS // args: **(text, en)** -> **(dialog)**, mechanism: each entry's jp / en lists are paired up first, then paged the same way
     const lines = dialog.flatMap(d => { const ens = toList(d.en); return toList(d.jp).map((ja, i) => ({ ja, en: ens[i] })) })
     const pages = lines.flatMap(({ ja: line, en }) => {
         if (line === '') return en ? [{ chars: [], en: Array.from(en) }] : [] // empty jp: **skipped** -> **an English-only page when en is set**, reason: Hiroko's tutorial lines are English, mechanism: English isn't cut into PAGE_CHARS pages (it wraps), so the line rides the small en text
         const chars = Array.from(line)
-        const n = Math.ceil(chars.length / PAGE_CHARS)
+        const n = Math.ceil(chars.length / pageChars) // size: **PAGE_CHARS** -> **pageChars**, mechanism: see args
         return Array.from({ length: n }, (_, i) => ({
-            chars: chars.slice(i * PAGE_CHARS, (i + 1) * PAGE_CHARS),
+            chars: chars.slice(i * pageChars, (i + 1) * pageChars),
             en: i === n - 1 ? Array.from(en ?? '') : [], // en: **ens[li]** -> **the line's own en**, mechanism: paired with its jp line above
         }))
     })
@@ -116,8 +144,12 @@ const toPages = (dialog: Dialog[]): Page[] => { // args: **(text, en)** -> **(di
 // line has been read, and isn't cut into pages (it wraps instead)
 
 // index show in front of name
-export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choices }: DialogBubbleProps) { // props: **no choices** -> **+ choices**, mechanism: see choices // props: **text, en** -> **dialog**, mechanism: see dialog
-    const pages = toPages(dialogs) // pages: **toPages(text, en)** -> **toPages(dialog)**, mechanism: each page carries its English (only a line's last page has any)
+export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choices, panel = false }: DialogBubbleProps) { // props: **+ panel**, mechanism: see panel // props: **no choices** -> **+ choices**, mechanism: see choices // props: **text, en** -> **dialog**, mechanism: see dialog
+    const host = useContext(DialogPanelHost)
+    const fit = panel && host && host.clientWidth > 0 && host.clientWidth < PHONE_MAX_W ? panelFit(host) : undefined
+    // fit: set only for an active talk on a phone-wide scene; undefined = the
+    // world bubble exactly as before
+    const pages = toPages(dialogs, fit?.pageChars) // pageChars: **PAGE_CHARS** -> **fit's page size on the panel**, mechanism: see panelFit // pages: **toPages(text, en)** -> **toPages(dialog)**, mechanism: each page carries its English (only a line's last page has any)
     const textKey = pages.map(p => p.chars.join('') + '\t' + p.en.join('')).join('\n') // key: **Japanese only** -> **+ English**, mechanism: a changed translation also restarts the typing
     const [typing, setTyping] = useState({ key: textKey, page: 0, n: 0, e: 0 }) // state: **{ page, n }** -> **+ e**, mechanism: e = English characters typed on this page
     const cur = typing.key === textKey ? typing : { key: textKey, page: 0, n: 0, e: 0 }
@@ -156,6 +188,95 @@ export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choic
         return () => stopLine(audio)
     }, [audio]) // effect: **speakJa(jaText, speak)** -> **playLine(audio)**, reason: recorded mp3s instead of speechSynthesis, mechanism: plays once as the line starts typing; keyed on the URL string, so per-frame re-renders don't replay it, and a new line or an unmount stops it
 
+    const s = fit ? fit.font / JA_FONT : 1
+    // s: **none** -> **panel font / JA_FONT on the panel, else 1**, mechanism: every size below (fonts, padding, border, tail) is its world-bubble value x s, so the panel is the bubble drawn bigger in screen px
+    const body = (
+        <div
+            style={{
+                border: `${BUBBLE_BORDER_W * s}px solid ${BUBBLE_BOARDER}`,
+                borderRadius: 0,
+                background: BUBBLE_BG,
+                color: BUBBLE_TEXT,
+                padding: `${2 * s}px ${6 * s}px`,
+                fontSize: JA_FONT * s, // fontSize: **8** -> **JA_FONT**, mechanism: EN_FONT is derived from it
+                lineHeight: LINE_H,
+                overflowWrap: 'anywhere',
+                ...(fit
+                    ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' as const, boxSizing: 'border-box' as const }
+                    : { width: 'max-content', maxWidth: page.chars.length ? BUBBLE_MAX_W : EN_ONLY_MAX_W }), // maxWidth: **BUBBLE_MAX_W** -> **EN_ONLY_MAX_W on an English-only page**, mechanism: see EN_ONLY_MAX_W // maxWidth: **120** -> **BUBBLE_MAX_W**, mechanism: see BUBBLE_MAX_W
+                // layout: **max-content bubble** -> **a column filling the panel when fit**, mechanism: the panel's height is fixed (top half), so the text sits at the top and the choices are pushed to the bottom (marginTop auto)
+            }}
+        >
+            <div>
+                {page.chars.slice(0, cur.n).join('')}
+                <span style={{ visibility: 'hidden' }}>{page.chars.slice(cur.n).join('')}</span> {/* text: **text?.map((l,i) => l[i])** -> **typed part + hidden rest of the page**, reason: show PAGE_CHARS characters at a time, typed one by one, mechanism: the untyped rest still takes up space but isn't painted, so the bubble is sized to the whole page from the first character and doesn't grow or shift the tail while typing */}
+            </div> {/* wrapper: **bare text** -> **a block div**, mechanism: a block in a block lays out the same in the bubble, and in the panel's flex column it stays one item instead of each text run becoming its own */}
+            {page.en.length > 0 && (
+                <div style={{ fontSize: (page.chars.length ? EN_FONT : EN_ONLY_FONT) * s, lineHeight: LINE_H }}> {/* fontSize: **EN_FONT** -> **EN_ONLY_FONT on an English-only page**, reason: Hiroko's tutorial text was too small, mechanism: a page with no Japanese chars is English-only */}
+                    {page.en.slice(0, cur.e).join('')}
+                    <span style={{ visibility: 'hidden' }}>{page.en.slice(cur.e).join('')}</span>
+                </div>
+            )}
+            {/* English: a block under the Japanese at EN_FONT, typed the
+                same way (typed part + hidden rest), so the bubble is sized
+                for both lines from the start and never grows mid-talk. It
+                wraps inside the same BUBBLE_MAX_W */}
+            {choices && choices.length > 0 && cur.page >= pages.length - 1 && cur.n >= page.chars.length && cur.e >= page.en.length && (
+                <div style={{ display: 'flex', gap: 4 * s, justifyContent: 'center', marginTop: fit ? 'auto' : 3, paddingTop: fit ? 3 * s : 0 }}>
+                    {choices.map((c, i) => (
+                        <div key={i} {...{ [CHOICE_TAP_ATTR]: i }} style={{ border: `${s}px solid ${BUBBLE_BOARDER}`, background: CHOICE_BG, padding: `${s}px ${6 * s}px`, textAlign: 'center' }}>
+                            {c.jp}
+                            <div style={{ fontSize: EN_FONT * s }}>{c.en}</div>
+                        </div>
+                    ))}
+                </div>
+            )}
+            {/* choices: one button per choice (jp over its small en),
+                shown only after the last page's Japanese and English have
+                fully typed, so the question is read before it can be
+                answered. They're divs, not buttons: the bubble is
+                pointerEvents none and GameScene picks them by their
+                CHOICE_TAP_ATTR rect */}
+        </div>
+    )
+    const tail = <>
+        <div style={triangle(TAIL * s, BUBBLE_BOARDER, `calc(100% - ${TAIL * s}px)`)} />
+        <div style={triangle(TAIL_INNER * s + SEAM, BUBBLE_BG, `calc(100% - ${(TAIL + BUBBLE_BORDER_W) * s + SEAM}px)`)} /> {/* fill triangle: **top at the border's top edge, size TAIL_INNER** -> **SEAM px higher and SEAM px bigger**, mechanism: its top edge used to land exactly on the body fill's bottom edge, and the anti-aliased edges of the two boxes left a thin line at the scene zoom; now it overlaps the body fill by SEAM px, so no edge meets there. At 45° a triangle SEAM higher and SEAM bigger has the same slanted sides, so the black outline of the tail doesn't change */}
+    </>
+    // tail: **inline** -> **shared, sized x s**, mechanism: the panel keeps the bubble's tail, pointing down at the NPC the talk camera centers below it
+
+    if (fit && host) return createPortal(
+        <div
+            data-npc={tapId}
+            style={{
+                position: 'absolute',
+                top: `calc(var(--safe-top, 0px) + ${PANEL_MARGIN}px)`,
+                left: PANEL_MARGIN,
+                right: PANEL_MARGIN,
+                height: `calc(50% - var(--safe-top, 0px) - ${PANEL_MARGIN}px)`,
+                display: 'flex',
+                flexDirection: 'column',
+                paddingBottom: TAIL * s,
+                boxSizing: 'border-box',
+                filter: `drop-shadow(${3 * s}px ${3 * s}px 0 ${BUBBLE_SHADOW})`,
+                pointerEvents: 'none',
+                userSelect: 'none',
+            }}
+        >
+            {body}
+            {tail}
+        </div>,
+        host,
+    )
+    // panel (phones, active talk): the same bubble body and tail, drawn in
+    // screen px in GameScene's host instead of over the NPC. It spans the
+    // scene's width minus PANEL_MARGIN and runs from the safe area's top to
+    // the middle of the screen (absolute, never fixed, so Safari's bar tint
+    // isn't frozen; docs/home-screen-app.md). data-npc stays on it, so a tap
+    // anywhere on the panel advances the talk, and the choices keep
+    // CHOICE_TAP_ATTR; GameScene finds both by rect inside its own div,
+    // where the portal's host lives
+
     return (
         <div
             data-npc={tapId} // attr: **none** -> **data-npc={tapId}**, mechanism: React drops an undefined attribute, so only tappable bubbles get it
@@ -171,51 +292,8 @@ export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choic
                 zIndex: 2,
             }}
         >
-            <div
-                style={{
-                    border: `${BUBBLE_BORDER_W}px solid ${BUBBLE_BOARDER}`,
-                    borderRadius: 0,
-                    background: BUBBLE_BG,
-                    color: BUBBLE_TEXT,
-                    padding: '2px 6px',
-                    fontSize: JA_FONT, // fontSize: **8** -> **JA_FONT**, mechanism: EN_FONT is derived from it
-                    lineHeight: 1.3,
-                    width: 'max-content',
-                    maxWidth: page.chars.length ? BUBBLE_MAX_W : EN_ONLY_MAX_W, // maxWidth: **BUBBLE_MAX_W** -> **EN_ONLY_MAX_W on an English-only page**, mechanism: see EN_ONLY_MAX_W // maxWidth: **120** -> **BUBBLE_MAX_W**, mechanism: see BUBBLE_MAX_W
-                    overflowWrap: 'anywhere',
-                }}
-            >
-                {page.chars.slice(0, cur.n).join('')}
-                <span style={{ visibility: 'hidden' }}>{page.chars.slice(cur.n).join('')}</span> {/* text: **text?.map((l,i) => l[i])** -> **typed part + hidden rest of the page**, reason: show PAGE_CHARS characters at a time, typed one by one, mechanism: the untyped rest still takes up space but isn't painted, so the bubble is sized to the whole page from the first character and doesn't grow or shift the tail while typing */}
-                {page.en.length > 0 && (
-                    <div style={{ fontSize: page.chars.length ? EN_FONT : EN_ONLY_FONT, lineHeight: 1.3 }}> {/* fontSize: **EN_FONT** -> **EN_ONLY_FONT on an English-only page**, reason: Hiroko's tutorial text was too small, mechanism: a page with no Japanese chars is English-only */}
-                        {page.en.slice(0, cur.e).join('')}
-                        <span style={{ visibility: 'hidden' }}>{page.en.slice(cur.e).join('')}</span>
-                    </div>
-                )}
-                {/* English: a block under the Japanese at EN_FONT, typed the
-                    same way (typed part + hidden rest), so the bubble is sized
-                    for both lines from the start and never grows mid-talk. It
-                    wraps inside the same BUBBLE_MAX_W */}
-                {choices && choices.length > 0 && cur.page >= pages.length - 1 && cur.n >= page.chars.length && cur.e >= page.en.length && (
-                    <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 3 }}>
-                        {choices.map((c, i) => (
-                            <div key={i} {...{ [CHOICE_TAP_ATTR]: i }} style={{ border: `1px solid ${BUBBLE_BOARDER}`, background: CHOICE_BG, padding: '1px 6px', textAlign: 'center' }}>
-                                {c.jp}
-                                <div style={{ fontSize: EN_FONT }}>{c.en}</div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-                {/* choices: one button per choice (jp over its small en),
-                    shown only after the last page's Japanese and English have
-                    fully typed, so the question is read before it can be
-                    answered. They're divs, not buttons: the bubble is
-                    pointerEvents none and GameScene picks them by their
-                    CHOICE_TAP_ATTR rect */}
-            </div>
-            <div style={triangle(TAIL, BUBBLE_BOARDER, `calc(100% - ${TAIL}px)`)} />
-            <div style={triangle(TAIL_INNER + SEAM, BUBBLE_BG, `calc(100% - ${TAIL + BUBBLE_BORDER_W + SEAM}px)`)} /> {/* fill triangle: **top at the border's top edge, size TAIL_INNER** -> **SEAM px higher and SEAM px bigger**, mechanism: its top edge used to land exactly on the body fill's bottom edge, and the anti-aliased edges of the two boxes left a thin line at the scene zoom; now it overlaps the body fill by SEAM px, so no edge meets there. At 45° a triangle SEAM higher and SEAM bigger has the same slanted sides, so the black outline of the tail doesn't change */}
+            {body}
+            {tail}
         </div>
     )
 }

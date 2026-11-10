@@ -51,7 +51,7 @@ export default async function GameLevel({
 
     const { data: rows } = await supabase.from('quests')
         .select('*').eq('island_id', islandId).order('id') // select: **id, title, kana** -> **\***, mechanism: + target (the editor's quest column) when it exists; '*' also works before that column is added
-    const quests = (rows ?? []).map(q => ({ id: q.id as number, title: q.title as string, kana: (q.kana ?? null) as string | null, target: q.target }))
+    const quests = (rows ?? []).map(q => ({ id: q.id as number, title: q.title as string, kana: (q.kana ?? null) as string | null, target: q.target, quest_type: (q.quest_type ?? null) as string | null })) // quest: **+ quest_type**, mechanism: IslandScene's tile bubble describes the quest by its type; null before the column exists = described as dodge
     const { data: mine } = await supabase.from('user_quests')
         .select('quest_id, completed_at').in('quest_id', quests.map(q => q.id))
     const status = new Map((mine ?? []).map(q => [q.quest_id, q.completed_at ? 'done' : 'resume']))

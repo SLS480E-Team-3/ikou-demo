@@ -7,11 +7,12 @@ import { ENT_H, ENT_W } from "../Entity/entityRenderer" // imports: **ENT_H, ENT
 import NPCRenderer, { NPCProps, NPC_TAP_ATTR, pickDialog, talkLines } from "../Entity/npcRenderer" // imports: **+ pickDialog**, mechanism: reads the talk's choices
 import { lineUrl, preloadClips } from "../Entity/voice"
 // voice preload: the scene decodes its NPC lines up front (see voiceUrls)
-import { BUBBLE_BOARDER, BUBBLE_BORDER_W, CHOICE_TAP_ATTR } from "../Entity/dialogBubble" // imports: **with BUBBLE_BG** -> **without**, mechanism: questBg's ground is its own floor color (DOJO_FLOOR) now, so nothing in this file reads BUBBLE_BG // imports: **CHOICE_TAP_ATTR** -> **+ BUBBLE_BG**, mechanism: QUEST_BG ground color // imports: **+ BUBBLE_BOARDER, BUBBLE_BORDER_W**, mechanism: the border BGProps.border draws
+import { BUBBLE_BOARDER, BUBBLE_BORDER_W, CHOICE_TAP_ATTR, DialogPanelHost } from "../Entity/dialogBubble" // imports: **+ DialogPanelHost**, mechanism: provides the screen-space box the mobile talk panel portals into // imports: **with BUBBLE_BG** -> **without**, mechanism: questBg's ground is its own floor color (DOJO_FLOOR) now, so nothing in this file reads BUBBLE_BG // imports: **CHOICE_TAP_ATTR** -> **+ BUBBLE_BG**, mechanism: QUEST_BG ground color // imports: **+ BUBBLE_BOARDER, BUBBLE_BORDER_W**, mechanism: the border BGProps.border draws
 import ObjectRenderer from "../Object/ObjectRenderer"
 import { HitBox, ObjectDef, PlacedObject, applyScale } from "../Object/gameObject"
 import { OBJECTS } from "../Object/objects"
 import MuteButton from "./MuteButton"
+import { usePlayerName } from "../Entity/playerName" // imports: **+ usePlayerName**, mechanism: the player's username replaces the 'Player' tag
 // mute toggle drawn over the scene (see the end of the render)
 
 
@@ -432,7 +433,7 @@ type Stick = { base: { x: number, y: number }, knob: { x: number, y: number } }
 
 const VIEWPORT_FOLLOW_RATE = 0.1
 
-const PLAYER_SPEED = 120 // world px/second
+const PLAYER_SPEED = 132 // world px/second // speed: **120** -> **132**, reason: testers T2 / T5 wanted to move faster, mechanism: +10%; sprint, the stick and the lean all scale off it
 const SPRINT = 1.5
 // speed multiplier while Shift (either side) is held
 const STICK_SPRINT_PUSH = 0.99
@@ -554,6 +555,9 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
     // screenSize has no default and isn't read yet, so it's undefined for now
 
     const [, force] = useState<number>(0)
+    const playerName = usePlayerName()
+    // the signed-in player's username for the name tag under the body;
+    // undefined while loading or logged out, which keeps player.name ('Player')
 
     const playerRef = useRef<PlayerProps>({ ...player, ent: player.ent && { ...player.ent, x: player.ent.x ?? bgProps.x, y: player.ent.y ?? bgProps.y } }) // ent: **{ ...player.ent }** -> **+ x/y ?? bgProps.x/y**, mechanism: a player without a spot spawns at its world's center, so every scene size spawns inside its own bounds
     const inputRef = useRef<Set<string>>(new Set<string>())
@@ -583,6 +587,9 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
     const stickRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 })
     const activeIdRef = useRef<number | null>(null)
     const [stick, setStick] = useState<Stick | null>(null)
+    const [panelHost, setPanelHost] = useState<HTMLDivElement | null>(null)
+    // the screen-space box a phone's talk panel renders into (DialogPanelHost);
+    // state, not a ref, so the world re-renders with it once it mounts
     const pointersRef = useRef<Map<number, { x: number, y: number }>>(new Map())
     const pinchRef = useRef<{ dist0: number, zoom0: number } | null>(null)
     // stickRef is what the rAF tick reads (-1..1 per axis, length <= 1) -- a
@@ -1255,6 +1262,7 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
             style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', touchAction: 'none' }} // scene div: **no pointer handlers, no touchAction** -> **pinch handlers + touchAction none**, reason: MobileGameScene's wrapper merged in, mechanism: the stick overlay is a child now, so its pointer events bubble here for the pinch, and touch-action none stops the browser's own pan/zoom on any touch starting in the scene
         >
             {/* sceneRef: the box whose size the camera clamp measures */}
+            <DialogPanelHost.Provider value={panelHost}>
             <div
                 style={{
                     position: 'absolute',
@@ -1356,7 +1364,7 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
                     don't draw over objects the player walked past */}
                 {/* entities go here, sized/positioned in world px (no zoom) */}
                 <div style={{ position: 'absolute', left: 0, top: 0, zIndex: Math.round((pEnt?.y ?? 0) + (pEnt?.h ?? ENT_H) / 2) }}> {/* wrap: **none** -> **0x0 div with the player's bottom-edge zIndex**, mechanism: ent.y is the center, so + h/2 is the feet; compared with ObjectRenderer's y + sprite.h the lower one draws in front. The wrapper is its own stacking context, so the name tag's zIndex 1 still only orders it against the body */}
-                <PlayerRenderer velocity={velocityRef.current} maxSpeed={PLAYER_SPEED} player={{ ...playerRef.current, name: playerLabel?.() ?? playerRef.current.name, talking: talkRef.current !== null }} /> {/* name: **player.name** -> **playerLabel?.() ?? player.name**, mechanism: PlayerRenderer puts player.name on the tag, so the label wins while it returns a string */} {/* player: **playerRef.current** -> **copy + talking**, mechanism: talkRef is non-null during a talk and the scene renders every frame, so PlayerRenderer sees talk start/end on the next frame; the copy is shallow, so ent is still the object the tick mutates */} {/* props: **velocity, player** -> **+ maxSpeed**, reason: lean scales with how hard the stick is pushed, mechanism: PLAYER_SPEED is full speed, so vel.x / PLAYER_SPEED is the stick's x (or ±1 / ±0.71 on keys); passed as a prop because the renderers importing it from here would be a circular import */}
+                <PlayerRenderer velocity={velocityRef.current} maxSpeed={PLAYER_SPEED} player={{ ...playerRef.current, name: playerName ?? playerRef.current.name, label: playerLabel?.(), talking: talkRef.current !== null }} /> {/* name: **playerLabel?.() ?? player.name** -> **the username ?? player.name, with playerLabel as label**, reason: T5 wanted the player's own name under the character, mechanism: PlayerRenderer draws name below the body and label (a quest's counter) above it */} {/* name: **player.name** -> **playerLabel?.() ?? player.name**, mechanism: PlayerRenderer puts player.name on the tag, so the label wins while it returns a string */} {/* player: **playerRef.current** -> **copy + talking**, mechanism: talkRef is non-null during a talk and the scene renders every frame, so PlayerRenderer sees talk start/end on the next frame; the copy is shallow, so ent is still the object the tick mutates */} {/* props: **velocity, player** -> **+ maxSpeed**, reason: lean scales with how hard the stick is pushed, mechanism: PLAYER_SPEED is full speed, so vel.x / PLAYER_SPEED is the stick's x (or ±1 / ±0.71 on keys); passed as a prop because the renderers importing it from here would be a circular import */}
                 </div>
                 {npcs.map((n, i) => {
                     const talk = talkRef.current
@@ -1405,6 +1413,15 @@ export default function GameScene({ bgProps = TEMP_BG, player = TEST_PLAYER, sen
                     zIndex, since those are all <= bg.h. World px like the rest,
                     so it scales with the zoom */}
             </div>
+            </DialogPanelHost.Provider> {/* provider: **none** -> **DialogPanelHost around the world**, mechanism: an NPC's DialogBubble reads the host from it to portal its phone talk panel */}
+            <div ref={setPanelHost} style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }} />
+            {/* panel host: a screen-space box over the whole scene, outside
+                the world's scale / translate, that a phone's talk panel
+                portals into (DialogPanelHost). Same zIndex as the stick
+                overlay but earlier in the DOM, so the overlay still gets every
+                touch; pointerEvents none for the same reason. Inside the
+                scene div, so tappedNpc / tappedChoice (querySelectorAll on
+                sceneRef) still find the panel and its choices by rect */}
             <div
                 onPointerDown={handleDown}
                 onPointerMove={handleMove}
