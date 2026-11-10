@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react"
+import KeyHintButton, { KeyHintProps } from "./keyHintButton" // import: **none** -> **KeyHintButton**, reason: testers didn't know Space advances a talk, mechanism: drawn on the bubble's corner when hint is set
 import { playLine, stopLine } from "./voice" // import: **speech (speakJa / stopSpeech)** -> **voice (playLine / stopLine)**, reason: lines play recorded mp3s now
 
 export type Condition =
@@ -32,6 +33,7 @@ type DialogBubbleProps = {
     tapId?: number, // tapId: **none** -> **tapId?**, reason: NPCs are picked by tapping their bubble, mechanism: set as the data-npc attribute on the wrapper, which GameScene's stick overlay hit-tests by rect (the bubble itself stays pointerEvents none)
     audio?: string, // speak: **speak?: NPCVoice** -> **audio?: string**, reason: speechSynthesis replaced by recorded mp3s, mechanism: URL of the clip played when the bubble shows; left out = silent (EntityRenderer's bubbles, lines with no recording)
     choices?: Dialog['choices'], // choices: **none** -> **choices?**, mechanism: NPCRenderer passes them only on a talk's last line; drawn once that line has fully typed
+    hint?: KeyHintProps, // hint: **none** -> **hint?**, reason: onboarding testers (4 Nov) didn't see that Space advances the text, mechanism: a KeyHintButton pinned to the bubble's bottom-right corner; NPCRenderer sets it while Space works on the shown line
     dialogs: Dialog[] // text, en: **text?, en?** -> **dialog: Dialog[]**, reason: a line's Japanese and English travel together with the condition they're said under, mechanism: each Dialog's jp lines page as before and en[i] types under jp[i]; the entries play in order, so the caller picks which ones (by condition) to pass
 }
 // the bubble takes the entity's position, not its own, so a caller passes
@@ -116,7 +118,7 @@ const toPages = (dialog: Dialog[]): Page[] => { // args: **(text, en)** -> **(di
 // line has been read, and isn't cut into pages (it wraps instead)
 
 // index show in front of name
-export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choices }: DialogBubbleProps) { // props: **no choices** -> **+ choices**, mechanism: see choices // props: **text, en** -> **dialog**, mechanism: see dialog
+export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choices, hint }: DialogBubbleProps) { // props: **+ hint**, mechanism: see hint // props: **no choices** -> **+ choices**, mechanism: see choices // props: **text, en** -> **dialog**, mechanism: see dialog
     const pages = toPages(dialogs) // pages: **toPages(text, en)** -> **toPages(dialog)**, mechanism: each page carries its English (only a line's last page has any)
     const textKey = pages.map(p => p.chars.join('') + '\t' + p.en.join('')).join('\n') // key: **Japanese only** -> **+ English**, mechanism: a changed translation also restarts the typing
     const [typing, setTyping] = useState({ key: textKey, page: 0, n: 0, e: 0 }) // state: **{ page, n }** -> **+ e**, mechanism: e = English characters typed on this page
@@ -214,6 +216,12 @@ export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choic
                     pointerEvents none and GameScene picks them by their
                     CHOICE_TAP_ATTR rect */}
             </div>
+            {hint && <KeyHintButton {...hint} style={{ position: 'absolute', left: '100%', bottom: TAIL, transform: 'translate(-35%, 60%)', ...hint.style }} />}
+            {/* hint: sits on the body's bottom-right corner, mostly outside
+                it (translate -35% / 60% of its own size) so it never covers
+                the text; bottom: TAIL measures from the body's bottom edge,
+                not the tail tip. The wrapper is position absolute, so it is
+                the hint's containing block and the hint follows the bubble */}
             <div style={triangle(TAIL, BUBBLE_BOARDER, `calc(100% - ${TAIL}px)`)} />
             <div style={triangle(TAIL_INNER + SEAM, BUBBLE_BG, `calc(100% - ${TAIL + BUBBLE_BORDER_W + SEAM}px)`)} /> {/* fill triangle: **top at the border's top edge, size TAIL_INNER** -> **SEAM px higher and SEAM px bigger**, mechanism: its top edge used to land exactly on the body fill's bottom edge, and the anti-aliased edges of the two boxes left a thin line at the scene zoom; now it overlaps the body fill by SEAM px, so no edge meets there. At 45° a triangle SEAM higher and SEAM bigger has the same slanted sides, so the black outline of the tail doesn't change */}
         </div>

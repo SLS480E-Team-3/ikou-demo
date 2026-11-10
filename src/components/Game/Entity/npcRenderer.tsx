@@ -73,6 +73,11 @@ export default function NPCRenderer({ npc, index, velocity, inRange, selected = 
     // the clip for what the bubble shows: the current talk line, or the
     // greeting's (first) recording while in range. Silent when the NPC has no
     // voice folder or the line has no file
+    const hint = (selected ? cur && !choices?.length : inRange) ? { keys: ['Space'], label: selected ? 'next' : 'talk' } : undefined
+    // hint: the Space key on the bubble wherever Space does something (see
+    // GameScene pressSpace): in range it starts the talk, while talking it
+    // shows the next line. Left off the line that shows choices, since
+    // はい / いいえ are tapped/clicked and Space does nothing there
     const tap = inRange || selected ? { [NPC_TAP_ATTR]: index } : undefined
 
     return (
@@ -92,7 +97,7 @@ export default function NPCRenderer({ npc, index, velocity, inRange, selected = 
                     }}
                 />
             )}
-            {dialogs && <DialogBubble x={ent.x} y={ent.y} h={ent.h} dialogs={dialogs} tapId={tap && index} audio={audio} choices={choices} />} {/* speak: **npc.voice while selected** -> **audio URL**, reason: mp3s replace speechSynthesis and the greeting plays too, mechanism: see audio above */} {/* dialogs: **one wrapped default line** -> **the entry picked above**, mechanism: see dialogs */}
+            {dialogs && <DialogBubble x={ent.x} y={ent.y} h={ent.h} dialogs={dialogs} tapId={tap && index} audio={audio} choices={choices} hint={hint} />} {/* props: **+ hint**, mechanism: see hint */} {/* speak: **npc.voice while selected** -> **audio URL**, reason: mp3s replace speechSynthesis and the greeting plays too, mechanism: see audio above */} {/* dialogs: **one wrapped default line** -> **the entry picked above**, mechanism: see dialogs */}
         </>
     )
 }
