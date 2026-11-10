@@ -3,6 +3,7 @@
 import { CSSProperties, ReactNode, useEffect, useReducer, useRef, useState } from "react"
 import TimerClock, { CLOCK_LEFT, CLOCK_SIZE, CLOCK_TOP } from "./timerClock" // imports: **+ CLOCK_LEFT, CLOCK_SIZE, CLOCK_TOP**, mechanism: the counter sits right of the clock
 import GameScene, { questBg } from "./gameScene"
+import SprintHint from "./sprintHint"
 import { TrainingHud, useQuestZoom } from "./training"
 import { PLAYER_GAP, center, useDodgeTraining } from "./dodgeTraining"
 import { questIslandNpcs } from "../npcs/npcs"
@@ -80,6 +81,7 @@ function Training({ w, h, onLeave, kana, sensitivity, tutorial, children }: { w:
         <>
             <GameScene tintEdges={BUBBLE_BG} /* tintEdges: **none** -> **BUBBLE_BG**, reason: the status bar showed the /Game green or a fixed Tint over the quest (issue #13), mechanism: GameScene paints the page with the ground color at the screen top, or this cream while the top row is above the room */ bgProps={{ ...questBg(w, h), y: c.y + PLAYER_GAP }} npcs={cast} onChoice={(n, c) => tut.onChoice(n, c) || t.onChoice(n, c)} onTalkEnd={n => tut.onTalkEnd(n) || t.onTalkEnd(n)} onTick={t.onTick} renderWorld={t.renderWorld} talkRequest={talk} moveRequest={t.moveRequest} sensitivity={sensitivity} zoomRequest={zoomRequest} fitWhole /> {/* playerLabel: **t.playerLabel (current/quota)** -> **none**, mechanism: the tag shows the player's name again; the count moved next to the timer (Hud) */} {/* fitWhole: **off** -> **on**, reason: zoom out until the entire dojo can be seen, mechanism: GameScene's zoom-out floor becomes the whole-dojo fit */} {/* props: **npcs, t.onChoice, t.onTalkEnd, t.talkRequest** -> **cast with Hiroko, tut handlers first, merged talk**, mechanism: tut.onChoice / onTalkEnd return true when the event was Hiroko's, so || skips the training's (which would read npc 1 as Elena); talk carries whichever request changed last */}
             <Hud getHud={t.getHud} run={t.phase === 'play1' || t.phase === 'play2'} />
+            {(t.phase === 'play1' || t.phase === 'play2') && <SprintHint />} {/* hint: **none** -> **Shift sprint hint while playing**, reason: testers didn't know Shift moves at max speed, mechanism: SprintHint (bottom right, hidden on touch) mounts only during the run */}
             {(t.phase === 'success' || t.phase === 'again') && children}
         </>
     )

@@ -1,0 +1,67 @@
+/* sizes are world px like the dialog bubble: the scene zooms them (x3 while
+   talking), so 1px here is 3 screen px in a talk */
+
+.hint {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 3px 3px;
+    border: 1px solid black;
+    background: #fffff2;
+    color: black;
+    filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.18));
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+    line-height: 1;
+}
+/* the bubble: same cream fill, black border and flat drop-shadow as
+   DialogBubble (BUBBLE_BG / BUBBLE_BOARDER / BUBBLE_SHADOW), thinner so it
+   reads as a side note, not a line of dialog. padding-bottom is 1px more so
+   the keycap's side (box-shadow) has room under it */
+
+.keys {
+    display: flex;
+    gap: 1px;
+}
+
+.key {
+    --key-side: 2px;
+    display: inline-block;
+    min-width: 5px;
+    padding: 1px 2px;
+    border: 1px solid black;
+    border-radius: 1px;
+    background: white;
+    font-size: 4px;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 var(--key-side) 0 black;
+    animation: press 1.6s ease-out infinite;
+}
+/* keycap: white top face; its "side" is a hard black box-shadow under it.
+   A press moves the face down by the side's height while the shadow shrinks
+   to 0, so the key looks pushed into the board, then it springs back */
+
+.label {
+    font-size: 4px;
+}
+
+@keyframes press {
+    0%, 55%, 100% { transform: translateY(0); box-shadow: 0 var(--key-side) 0 black; }
+    62%, 70% { transform: translateY(var(--key-side)); box-shadow: 0 0 0 black; }
+    78% { transform: translateY(-0.5px); box-shadow: 0 calc(var(--key-side) + 0.5px) 0 black; }
+}
+/* 0-55% resting (the pause between presses), 55-62% press down, held to 70%,
+   78% springs a half pixel past rest, then settles back by 100% */
+
+@media (prefers-reduced-motion: reduce) {
+    .key { animation: none; }
+}
+/* reduced motion: a static, unpressed key */
+
+@media (hover: none) and (pointer: coarse) {
+    .hint { display: none; }
+}
+/* touch devices (the Home Screen app on a phone or tablet) have no keyboard,
+   and bubbles there are advanced by tapping, so the hint is hidden */

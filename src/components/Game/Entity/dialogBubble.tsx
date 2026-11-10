@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react" // imports: **useEffect, useState** -> **+ createContext, useContext**, mechanism: DialogPanelHost hands the bubble the screen-space box its mobile panel portals into
 import { createPortal } from "react-dom" // imports: **+ createPortal**, mechanism: the mobile panel renders into GameScene's screen-space host, outside the zoomed world
+import KeyHintButton, { KeyHintProps } from "./keyHintButton" // import: **none** -> **KeyHintButton**, reason: testers didn't know Space advances a talk, mechanism: drawn on the bubble's corner when hint is set
 import { playLine, stopLine } from "./voice" // import: **speech (speakJa / stopSpeech)** -> **voice (playLine / stopLine)**, reason: lines play recorded mp3s now
 
 export type Condition =
@@ -34,6 +35,7 @@ type DialogBubbleProps = {
     audio?: string, // speak: **speak?: NPCVoice** -> **audio?: string**, reason: speechSynthesis replaced by recorded mp3s, mechanism: URL of the clip played when the bubble shows; left out = silent (EntityRenderer's bubbles, lines with no recording)
     choices?: Dialog['choices'], // choices: **none** -> **choices?**, mechanism: NPCRenderer passes them only on a talk's last line; drawn once that line has fully typed
     panel?: boolean, // panel: **none** -> **panel?**, reason: on phones the talk bubble was small and fit 15 characters, mechanism: true = on a phone-wide scene, draw this as the top-half panel (see DialogPanelHost) instead of the world bubble; NPCRenderer sets it for the active talk only
+    hint?: KeyHintProps, // hint: **none** -> **hint?**, reason: onboarding testers (4 Nov) didn't see that Space advances the text, mechanism: a KeyHintButton pinned to the bubble's bottom-right corner; NPCRenderer sets it while Space works on the shown line
     dialogs: Dialog[] // text, en: **text?, en?** -> **dialog: Dialog[]**, reason: a line's Japanese and English travel together with the condition they're said under, mechanism: each Dialog's jp lines page as before and en[i] types under jp[i]; the entries play in order, so the caller picks which ones (by condition) to pass
 }
 // the bubble takes the entity's position, not its own, so a caller passes
@@ -144,7 +146,7 @@ const toPages = (dialog: Dialog[], pageChars = PAGE_CHARS): Page[] => { // args:
 // line has been read, and isn't cut into pages (it wraps instead)
 
 // index show in front of name
-export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choices, panel = false }: DialogBubbleProps) { // props: **+ panel**, mechanism: see panel // props: **no choices** -> **+ choices**, mechanism: see choices // props: **text, en** -> **dialog**, mechanism: see dialog
+export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choices, panel = false, hint }: DialogBubbleProps) { // props: **+ hint**, mechanism: see hint // props: **+ panel**, mechanism: see panel // props: **no choices** -> **+ choices**, mechanism: see choices // props: **text, en** -> **dialog**, mechanism: see dialog
     const host = useContext(DialogPanelHost)
     const fit = panel && host && host.clientWidth > 0 && host.clientWidth < PHONE_MAX_W ? panelFit(host) : undefined
     // fit: set only for an active talk on a phone-wide scene; undefined = the
@@ -264,6 +266,7 @@ export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choic
             }}
         >
             {body}
+            {hint && <KeyHintButton {...hint} style={{ position: 'absolute', right: 4 * s, bottom: (TAIL + 4) * s, ...hint.style }} />} {/* hint: **world bubble's corner** -> **inside the panel's bottom-right corner** on phones, reason: merging the key-hint branch with the panel, mechanism: the panel spans the screen, so left 100% would put it off-screen; right / bottom keep it inside the body, above the tail */}
             {tail}
         </div>,
         host,
@@ -293,6 +296,12 @@ export default function DialogBubble({ x, y = 0, h, dialogs, tapId, audio, choic
             }}
         >
             {body}
+            {hint && <KeyHintButton {...hint} style={{ position: 'absolute', left: '100%', bottom: TAIL, transform: 'translate(-35%, 60%)', ...hint.style }} />}
+            {/* hint: sits on the body's bottom-right corner, mostly outside
+                it (translate -35% / 60% of its own size) so it never covers
+                the text; bottom: TAIL measures from the body's bottom edge,
+                not the tail tip. The wrapper is position absolute, so it is
+                the hint's containing block and the hint follows the bubble */}
             {tail}
         </div>
     )
